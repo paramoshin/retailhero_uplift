@@ -1,3 +1,5 @@
+import csv
+
 import pandas as pd
 import numpy as np
 from sqlalchemy import Table, MetaData
@@ -22,18 +24,6 @@ if __name__ == "__main__":
     )
     f.init_database(f.engine)
     db_client = DatabaseClient("postgres", "postgres", host, port, "uplift")
-
-    r = db_client.get_first(Purchases)
-    if not r:
-        df = pd.read_csv("../../data/raw/purchases.csv")
-        df = df.where((pd.notnull(df)), None)
-        rows = df.to_dict(orient='records')
-        metadata = MetaData()
-        metadata.reflect(f.engine, only=["purchases"])
-        insert_query = Table("purchases", metadata).insert()
-        f.engine.execute(insert_query, rows)
-        del df
-        del rows
 
     r = db_client.get_first(Clients)
     if not r:
@@ -60,4 +50,25 @@ if __name__ == "__main__":
         f.engine.execute(insert_query, rows)
         del df
         del rows
+
+    r = db_client.get_first(Purchases)
+    if not r:
+        # df = pd.read_csv("../../data/raw/purchases.csv")
+        # df = df.where((pd.notnull(df)), None)
+        # rows = df.to_dict(orient='records')
+        rows = csv.DictReader(open("../../data/raw/purchases.csv", "r"))
+        metadata = MetaData()
+        metadata.reflect(f.engine, only=["purchases"])
+        insert_query = Table("purchases", metadata).insert()
+
+        for row in rows:
+            if row['product_id'] in {"04d86b4b50", "48cc0e256d", "6a3d708544"}:
+                continue
+            r = {}
+            for k, v in row.items():
+                if v == "":
+                    r[k] = None
+                else:
+                    r[k] = v
+            f.engine.execute(insert_query, r)
 

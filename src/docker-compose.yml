@@ -1,6 +1,8 @@
-version: 3
+version: "3"
 services:
   uplift_db:
+    image: postgres
+    container_name: uplift_db
     ports:
     - "5434:5432"
     environment:
