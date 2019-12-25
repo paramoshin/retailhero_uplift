@@ -1,0 +1,9 @@
+version: 3
+services:
+  uplift_db:
+    ports:
+    - "5434:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSGRES_PASSWORD=postgres
+      - POSTGRES_DB=uplift
