@@ -1,7 +1,6 @@
 import csv
 
 import pandas as pd
-import numpy as np
 from sqlalchemy import Table, MetaData
 
 from src.database.base import SessionFactory
@@ -26,9 +25,13 @@ if __name__ == "__main__":
     db_client = DatabaseClient("postgres", "postgres", host, port, "uplift")
 
     r = db_client.get_first(Clients)
-    if not r:
-        df = pd.read_csv("../../data/raw/clients.csv")
-        df = df.where((pd.notnull(df)), None)
+    n_rows = db_client.get_number_of_rows(Clients)
+    df = pd.read_csv("../../data/raw/clients.csv")
+    df = df.where((pd.notnull(df)), None)
+    if not r or df.shape[0] != n_rows:
+        print("loading clients")
+        if r and df.shape[0] != n_rows:
+            db_client.clean_table(Clients)
         rows = df.to_dict(orient='records')
         metadata = MetaData()
         metadata.reflect(f.engine, only=["clients"])
@@ -38,11 +41,15 @@ if __name__ == "__main__":
         del rows
 
     r = db_client.get_first(Products)
-    if not r:
-        df = pd.read_csv("../../data/raw/products.csv")
-        df = df.drop([796, 12219, 17818], axis=0)
-        df['segment_id'] = df['segment_id'].fillna(-1).astype(int)
-        df = df.where((pd.notnull(df)), None)
+    n_rows = db_client.get_number_of_rows(Products)
+    df = pd.read_csv("../../data/raw/products.csv")
+    df = df.drop([796, 12219, 17818], axis=0)
+    df['segment_id'] = df['segment_id'].fillna(-1).astype(int)
+    df = df.where((pd.notnull(df)), None)
+    if not r or df.shape[0] != n_rows:
+        print("loading products")
+        if r and df.shape[0] != n_rows:
+            db_client.clean_table(Products)
         rows = df.to_dict(orient='records')
         metadata = MetaData()
         metadata.reflect(f.engine, only=["products"])
@@ -52,23 +59,22 @@ if __name__ == "__main__":
         del rows
 
     r = db_client.get_first(Purchases)
-    if not r:
-        # df = pd.read_csv("../../data/raw/purchases.csv")
-        # df = df.where((pd.notnull(df)), None)
-        # rows = df.to_dict(orient='records')
+    n_rows = db_client.get_number_of_rows(Purchases)
+    if not r or n_rows != 45786568:
+        print("loading purchases")
+        if r and n_rows != 45786568:
+            db_client.clean_table(Purchases)
         rows = csv.DictReader(open("../../data/raw/purchases.csv", "r"))
         metadata = MetaData()
         metadata.reflect(f.engine, only=["purchases"])
         insert_query = Table("purchases", metadata).insert()
-
-        for row in rows:
+        for i, row in enumerate(rows):
+            lb = int(i / 10000) * 10000
+            ub = (int(i / 10000) + 1) * 10000
+            if i % 10000 == 0:
+                print(f"Loading rows {lb} to {ub} ({lb / 45786568}% ready)")
             if row['product_id'] in {"04d86b4b50", "48cc0e256d", "6a3d708544"}:
                 continue
-            r = {}
-            for k, v in row.items():
-                if v == "":
-                    r[k] = None
-                else:
-                    r[k] = v
-            f.engine.execute(insert_query, r)
+            row = {k: v if v else None for k, v in row.items()}
+            f.engine.execute(insert_query, row)
 

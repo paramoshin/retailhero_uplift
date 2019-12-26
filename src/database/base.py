@@ -70,8 +70,11 @@ class SessionFactory(object):
         return engine
 
     @staticmethod
-    def init_database(engine):
-        Base.metadata.create_all(engine)
+    def init_database(engine, tables=None):
+        if not tables:
+            Base.metadata.create_all(engine)
+        else:
+            Base.metadata.create_all(engine, tables=tables)
 
     def get_factory(self):
         return self._SessionFactory

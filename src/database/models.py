@@ -1,4 +1,6 @@
 from sqlalchemy import Column, String, Integer, DateTime, Float, Boolean, ForeignKey
+from sqlalchemy.orm import validates
+import numpy as np
 
 from .base import Base
 
@@ -45,5 +47,3 @@ class Purchases(Base):
     product_quantity = Column("product_quantity", Float, nullable=False)
     trn_sum_from_iss = Column("trn_sum_from_iss", Float, nullable=False)
     trn_sum_from_red = Column("trn_sum_from_red", Float, nullable=True)
-
-

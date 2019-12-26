@@ -1,5 +1,7 @@
 from typing import Optional
 
+from sqlalchemy import func
+
 from .base import SessionFactory, Base, with_session
 
 
@@ -7,6 +9,16 @@ class DatabaseClient(object):
     def __init__(self, user: str, password: str, host: str, port: int, database_name: str):
         dialect = "postgresql"
         self.session_factory = SessionFactory(dialect, user, password, host, port, database_name)
+
+    @with_session
+    def clean_table(self, model: Base, session=None):
+        session.query(model).delete()
+
+    @with_session
+    def get_number_of_rows(self, model: Base, session=None) -> int:
+        # n_rows = session.query(func.count(model.client_id)).scalar()
+        n_rows = session.query(model).count()
+        return n_rows
 
     @with_session
     def exists(self, model: Base, session=None, **kwargs) -> bool:
