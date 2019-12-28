@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 import xgboost as xgb
 from sklearn.base import clone
+from sklearn.model_selection import RandomizedSearchCV
 
 
 if __name__ == "__main__":
@@ -60,17 +61,39 @@ if __name__ == "__main__":
 
 
     clf = xgb.XGBClassifier()
-    
-    clf_control = clone(clf).fit(X_control_train, y_control_train)
+    parameters = {
+        "learning_rate": [0.1, 0.01, 0.001],
+        "gamma": [0.01, 0.1, 0.3, 0.5, 1, 1.5, 2],
+        "max_depth": [2, 4, 7, 10],
+        "colsample_bytree": [0.3, 0.6, 0.8, 1.0],
+        "subsample": [0.5, 0.6, 0.7, 0.8, 0.9],
+        "reg_alpha": [0, 0.5, 1],
+        "reg_lambda": [1, 1.5, 2, 3, 4.5],
+        "min_child_weight": [1, 3, 5, 7],
+        "n_estimators": [100, 250, 500, 1000]
+    }
+
+    xgb_rscv_control = RandomizedSearchCV(
+        clone(clf), param_distributions=parameters, cv=3, verbose=3, random_state=42
+    )
+    clf_control = xgb_rscv_control.fit(X_control_train, y_control_train)
+    print(f"Best params for control classifier: {xgb_rscv_control.best_parameters_ }, "
+          f"best score: {xgb_rscv_control.best_score_}")
     print(
-        f"Accuracy for control classifier: "
+        f"Accuracy for control classifier on validataion set: "
         f"{clf_control.score(X_valid[valid_is_treatment == 0], y_valid[valid_is_treatment == 0])}"
     )
     
     X_treatment_train["control_pred"] = clf_control.predict_proba(X_treatment_train)[:, 1]
-    clf_treatment = clone(clf).fit(X_treatment_train, y_treatment_train)
+    xgb_rscv_treatment = RandomizedSearchCV(
+        clone(clf), param_distributions=parameters, cv=3, verbose=3, random_state=42
+    )
+    clf_treatment = xgb_rscv_treatment.fit(X_treatment_train, y_treatment_train)
+    print(f"Best params for treatment classifier: {xgb_rscv_treatment.best_parameters_ }, "
+          f"best score: {xgb_rscv_treatment.best_score_}")
+
     print(
-        f"Accuracy for treatment classifier: "
+        f"Accuracy for treatment classifier on validation set: "
         f"{clf_control.score(X_valid[valid_is_treatment == 1], y_valid[valid_is_treatment == 1])}"
     )
 

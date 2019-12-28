@@ -1,0 +1,4 @@
+model,uplift_validation_score
+2019-12-28_14H:59M_xgboost.sklearn.XGBClassifier,0.066199444853689
+2019-12-28_15H:57M_xgboost_sklearn_XGBClassifier,0.066199444853689
+2019-12-28_15H-58M_xgboost_sklearn_XGBClassifier,0.066199444853689
