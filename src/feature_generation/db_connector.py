@@ -56,7 +56,7 @@ class DBConnector:
             func.count(distinct(subq.c.transaction_id)).label('n_transactions'),
             cast(func.avg(subq.c.transaction_time), Time).label('avg_transaction_time'),
             func.stddev(extract('epoch', subq.c.transaction_time)).label('stddev_transaction_time'),
-            mode().within_group(subq.c.transaction_weekday),
+            mode().within_group(subq.c.transaction_weekday).label("mode_transaction_weekday"),
             func.sum(subq.c.regular_points_received).label('sum_regular_points_received'),
             func.sum(subq.c.express_points_received).label('sum_express_points_received'),
             func.sum(subq.c.regular_points_spent).label('sum_regular_points_spent'),

@@ -64,17 +64,24 @@ if __name__ == "__main__":
         print("loading purchases")
         if r and n_rows != 45786568:
             db_client.clean_table(Purchases)
-        rows = csv.DictReader(open("../../data/raw/purchases.csv", "r"))
+        # rows = csv.DictReader(open("../../data/raw/purchases.csv", "r"))
         metadata = MetaData()
         metadata.reflect(f.engine, only=["purchases"])
-        insert_query = Table("purchases", metadata).insert()
-        for i, row in enumerate(rows):
-            lb = int(i / 10000) * 10000
-            ub = (int(i / 10000) + 1) * 10000
-            if i % 10000 == 0:
-                print(f"Loading rows {lb} to {ub} ({lb / 45786568}% ready)")
-            if row['product_id'] in {"04d86b4b50", "48cc0e256d", "6a3d708544"}:
-                continue
-            row = {k: v if v else None for k, v in row.items()}
-            f.engine.execute(insert_query, row)
+        chunksize = 10 ** 6
+        for i, chunk in enumerate(pd.read_csv("../../data/raw/purchases.csv", chunksize=chunksize)):
+            print(f"chunk no {i}")
+            chunk = chunk.replace({pd.np.nan: None})
+            chunk = chunk[~chunk['product_id'].isin({"04d86b4b50", "48cc0e256d", "6a3d708544"})]
+            rows = chunk.to_dict(orient='records')
+            insert_query = Table("purchases", metadata).insert()
+            f.engine.execute(insert_query, rows)
+        # for i, row in enumerate(rows):
+        #     lb = int(i / 10000) * 10000
+        #     ub = (int(i / 10000) + 1) * 10000
+        #     if i % 10000 == 0:
+        #         print(f"Loading rows {lb} to {ub} ({lb / 45786568}% ready)")
+        #     if row['product_id'] in {"04d86b4b50", "48cc0e256d", "6a3d708544"}:
+        #         continue
+        #     row = {k: v if v else None for k, v in row.items()}
+        #     f.engine.execute(insert_query, row)
 
