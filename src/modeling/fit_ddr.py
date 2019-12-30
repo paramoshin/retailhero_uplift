@@ -77,7 +77,7 @@ if __name__ == "__main__":
         clone(clf), param_distributions=parameters, cv=3, verbose=3, random_state=42
     )
     clf_control = xgb_rscv_control.fit(X_control_train, y_control_train)
-    print(f"Best params for control classifier: {xgb_rscv_control.best_parameters_ }, "
+    print(f"Best params for control classifier: {xgb_rscv_control.best_params_ }, "
           f"best score: {xgb_rscv_control.best_score_}")
     print(
         f"Accuracy for control classifier on validataion set: "
@@ -89,7 +89,7 @@ if __name__ == "__main__":
         clone(clf), param_distributions=parameters, cv=3, verbose=3, random_state=42
     )
     clf_treatment = xgb_rscv_treatment.fit(X_treatment_train, y_treatment_train)
-    print(f"Best params for treatment classifier: {xgb_rscv_treatment.best_parameters_ }, "
+    print(f"Best params for treatment classifier: {xgb_rscv_treatment.best_params_ }, "
           f"best score: {xgb_rscv_treatment.best_score_}")
 
     print(
