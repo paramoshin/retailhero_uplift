@@ -1,11 +1,12 @@
+# Жесткий overfit ???
+
 from datetime import datetime
 import pickle
 
 import pandas as pd
 import numpy as np
 import xgboost as xgb
-from sklearn.base import clone
-from sklearn.model_selection import RandomizedSearchCV
+from sklearn.ensemble import RandomForestClassifier
 
 
 if __name__ == "__main__":
@@ -59,11 +60,10 @@ if __name__ == "__main__":
         score = treatment_p - control_p
         return score
 
-    X_train = pd.concat([X_control_train, X_treatment_train], ignore_index=True)
-    X_train["is_treatment"] = np.concatenate(
-        [np.zeros_like(y_control_train), np.ones_like(y_treatment_train)]
-    )
-    X_train["target"] = pd.concat([y_control_train, y_treatment_train])
+    X_control_train["is_treatment"] = 0
+    X_treatment_train["is_treatment"] = 1
+    X_train = pd.concat([X_control_train, X_treatment_train], ignore_index=False)
+    X_train["target"] = pd.concat([y_control_train, y_treatment_train], ignore_index=False)
     X_train["Z"] = (
         (
             (X_train["is_treatment"] == 1) & (X_train["target"] == 1)
@@ -74,20 +74,22 @@ if __name__ == "__main__":
     y_train = X_train["Z"]
     X_train = X_train.drop(["is_treatment", "target", "Z"], axis=1)
 
-    X_valid["is_treatment"] = valid_is_treatment
-    X_valid["target"] = y_valid
     X_valid["Z"] = (
         (
-            (X_valid["is_treatment"] == 1) & (X_valid["target"] == 1)
+            (valid_is_treatment == 1) & (y_valid == 1)
         ) | (
-            (X_valid["is_treatment"] == 0) & (X_valid["target"] == 0)
+            (valid_is_treatment == 0) & (y_valid == 0)
         )
     ).astype(int)
     y_valid = X_valid["Z"]
-    X_valid = X_valid.drop(["is_treatment", "target", "Z"], axis=1)
+    X_valid = X_valid.drop(["Z"], axis=1)
 
-    clf = xgb.XGBClassifier()
+    # clf = xgb.XGBClassifier(learning_rate=0.01, subsample=0.8, n_estimators=500, min_child_weight=7)
+    clf = RandomForestClassifier()
+    X_train = X_train.fillna(-999)
+    X_valid = X_valid.fillna(-999)
     clf.fit(X_train, y_train)
+    print(clf.score(X_train, y_train))
     print(f"Accuracy on validation set: {clf.score(X_valid, y_valid)}")
 
     validation_uplift = 2 * clf.predict_proba(X_valid) - 1

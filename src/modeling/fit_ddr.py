@@ -74,9 +74,10 @@ if __name__ == "__main__":
     }
 
     xgb_rscv_control = RandomizedSearchCV(
-        clone(clf), param_distributions=parameters, cv=3, verbose=3, random_state=42
+        clone(clf), param_distributions=parameters, cv=3, verbose=3, random_state=42, n_jobs=-1
     )
     clf_control = xgb_rscv_control.fit(X_control_train, y_control_train)
+    print(f"Score on control train set: {clf_control.score(X_control_train, y_control_train)}")
     print(f"Best params for control classifier: {xgb_rscv_control.best_params_ }, "
           f"best score: {xgb_rscv_control.best_score_}")
     print(
@@ -86,9 +87,10 @@ if __name__ == "__main__":
     
     X_treatment_train["control_pred"] = clf_control.predict_proba(X_treatment_train)[:, 1]
     xgb_rscv_treatment = RandomizedSearchCV(
-        clone(clf), param_distributions=parameters, cv=3, verbose=3, random_state=42
+        clone(clf), param_distributions=parameters, cv=3, verbose=3, random_state=42, n_jobs=-1
     )
     clf_treatment = xgb_rscv_treatment.fit(X_treatment_train, y_treatment_train)
+    print(f"Score on treatment train set: {clf_treatment.score(X_treatment_train, y_treatment_train)}")
     print(f"Best params for treatment classifier: {xgb_rscv_treatment.best_params_ }, "
           f"best score: {xgb_rscv_treatment.best_score_}")
 
@@ -100,7 +102,7 @@ if __name__ == "__main__":
     X_valid["control_pred"] = clf_control.predict_proba(X_valid)[:, 1]
     valid_uplift = clf_treatment.predict_proba(X_valid)[:, 1] - X_valid["control_pred"]
     valid_uplift_score = uplift_score(valid_uplift, valid_is_treatment, y_valid)
-    print(f"Uplift score on validation.csv = {valid_uplift_score}, "
+    print(f"Uplift score on validation = {valid_uplift_score}, "
           f"(baseline on validation = 0.05081166028966111, "
           f"difference = {valid_uplift_score - 0.0605}")
 
