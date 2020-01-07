@@ -4,29 +4,27 @@ import pickle
 import pandas as pd
 import numpy as np
 import xgboost as xgb
+from scipy import stats
 from sklearn.base import clone
+from sklearn.model_selection import StratifiedKFold, RandomizedSearchCV
 
 
 if __name__ == "__main__":
-    X_control_train = pd.read_csv(
-        "../../data/processed/two_models/X_control_train.csv", index_col="client_id"
+    X_train = pd.read_csv(
+        "../../data/processed/two_models/X_train.csv", index_col="client_id"
     )
-    y_control_train = pd.read_csv(
-        "../../data/processed/two_models/y_control_train.csv",
+    y_train = pd.read_csv(
+        "../../data/processed/two_models/y_train.csv",
         header=None,
         names=["client_id", "target"],
         index_col="client_id"
     )["target"]
-
-    X_treatment_train = pd.read_csv(
-        "../../data/processed/two_models/X_treatment_train.csv", index_col="client_id"
-    )
-    y_treatment_train = pd.read_csv(
-        "../../data/processed/two_models/y_treatment_train.csv",
+    train_is_treatment = pd.read_csv(
+        "../../data/processed/two_models/X_train_is_treatment.csv",
         header=None,
-        names=["client_id", "target"],
+        names=["client_id", "is_treatment"],
         index_col="client_id"
-    )["target"]
+    )["is_treatment"]
 
     X_valid = pd.read_csv("../../data/processed/two_models/X_valid.csv", index_col="client_id")
     y_valid = pd.read_csv(
@@ -35,9 +33,8 @@ if __name__ == "__main__":
         names=["client_id", "target"],
         index_col="client_id"
     )["target"]
-
     valid_is_treatment = pd.read_csv(
-        "../../data/processed/two_models/valid_is_treatment.csv",
+        "../../data/processed/two_models/X_valid_is_treatment.csv",
         header=None,
         names=["client_id", "is_treatment"],
         index_col="client_id"
@@ -59,20 +56,73 @@ if __name__ == "__main__":
         return score
 
 
-    clf = xgb.XGBClassifier()
+    clf = xgb.XGBClassifier(objective='binary:logistic')
+    # {'colsample_bytree': 0.5701975341512912, 'learning_rate': 0.014065852851773964, 'max_depth': 7,
+    # 'min_child_weight': 3, 'n_estimators': 458, 'subsample': 0.8849549260809972}
 
-    clf_control = clone(clf).fit(X_control_train, y_control_train)
+    # CLASSIFIERS PERFORMANCE ON VALIDATION SET NO OPTIMIZATION
+    clf_control = clone(clf).fit(X_train[train_is_treatment == 0], y_train[train_is_treatment == 0])
+    print(f"Control classifier accuracy on validation: {clf_control.score(X_valid, y_valid)}")
     predict_valid_control = clf_control.predict_proba(X_valid)[:, 1]
 
-    clf_treatment = clone(clf).fit(X_treatment_train, y_treatment_train)
+    clf_treatment = clone(clf).fit(X_train[train_is_treatment == 1], y_train[train_is_treatment == 1])
+    print(f"Treatment classifier accuracy on validation: {clf_treatment.score(X_valid, y_valid)}")
     predict_valid_treatment = clf_treatment.predict_proba(X_valid)[:, 1]
 
     predict_valid_uplift = predict_valid_treatment - predict_valid_control
     valid_uplift_score = uplift_score(predict_valid_uplift, valid_is_treatment, y_valid)
-    print(f"Uplift score on validation.csv = {valid_uplift_score}, "
+    print(f"Uplift score on validation = {valid_uplift_score}, "
           f"(baseline on validation = 0.05081166028966111, "
-          f"difference = {valid_uplift_score - 0.0605}")
+          f"difference = {valid_uplift_score - 0.05081166028966111}")
+    #
 
+    param_dist = {
+        'n_estimators': stats.randint(150, 800),
+        'learning_rate': stats.uniform(0.01, 0.07),
+        'subsample': stats.uniform(0.4, 0.5),
+        'max_depth': [3, 4, 5, 6, 7, 8, 9],
+        'colsample_bytree': stats.uniform(0.5, 0.45),
+        'min_child_weight': [1, 2, 3],
+    }
+    kfold = StratifiedKFold(n_splits=5, random_state=42)
+    rs_clf = RandomizedSearchCV(
+        clf,
+        cv=kfold,
+        param_distributions=param_dist,
+        n_iter=10,
+        scoring='roc_auc',
+        verbose=3,
+        n_jobs=8,
+        random_state=42
+    )
+    rs_clf.fit(X_train, y_train)
+    print(f"best params: {rs_clf.best_params_}")
+    print(f"validation score: {rs_clf.score(X_valid, y_valid)}")
+
+    # JOIN TRAIN AND VALIDATION SETS
+    X_control = pd.concat([X_train[train_is_treatment == 0], X_valid[valid_is_treatment == 0]], ignore_index=False)
+    X_treatment = pd.concat([X_train[train_is_treatment == 1], X_valid[valid_is_treatment == 1]], ignore_index=False)
+
+    y_control = pd.concat([y_train[train_is_treatment == 0], y_valid[valid_is_treatment == 0]], ignore_index=False)
+    y_treatment = pd.concat([y_train[train_is_treatment == 1], y_valid[valid_is_treatment == 1]], ignore_index=False)
+    #
+
+    # CROSS VALIDATION SCORE ON WHOLE TRAIN DATASET
+    # kfold = StratifiedKFold(n_splits=10, random_state=42)
+    #
+    # results_control = cross_val_score(clf, X_control, y_control, cv=kfold)
+    # print("CV accuracy control: %.2f%% (%.2f%%)" % (results_control.mean() * 100, results_control.std() * 100))
+    #
+    # results_treatment = cross_val_score(clf, X_treatment, y_treatment, cv=kfold)
+    # print("CV accuracy treatment: %.2f%% (%.2f%%)" % (results_treatment.mean() * 100, results_treatment.std() * 100))
+
+    # FITTING ON WHOLE TRAINING SET
+    print("fitting classifiers on whole training set")
+    clf_control = rs_clf.best_estimator_.fit(X_control, y_control)
+    clf_treatment = rs_clf.best_estimator_.fit(X_treatment, y_treatment)
+    #
+
+    # SAVING MODEL AND SUBMISSION
     dt = datetime.now().strftime("%Y-%m-%d_%HH-%MM")
     model_name = dt + "_" + str(clf.__class__).split("'")[1].replace(".", "_")
     f_name = "../../models/two_models/" + model_name
@@ -83,8 +133,9 @@ if __name__ == "__main__":
     pickle.dump(
         clf_treatment, open(f_name + "_treatment.pkl", "wb")
     )
-    with open("../../models/two_models/validation.csv", "a") as f:
-        f.write(f"{model_name},{valid_uplift_score}\n")
+
+    # with open("../../models/two_models/validation.csv", "a") as f:
+    #     f.write(f"{model_name},{valid_uplift_score}\n")
 
     predict_test_control = clf_control.predict_proba(X_test)[:, 1]
     predict_test_treatment = clf_treatment.predict_proba(X_test)[:, 1]
