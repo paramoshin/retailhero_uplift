@@ -61,12 +61,15 @@ if __name__ == "__main__":
     # }
     clf = xgb.XGBClassifier(objective='binary:logistic')
     param_dist = {
-        'n_estimators': stats.randint(150, 800),
-        'learning_rate': stats.uniform(0.01, 0.07),
-        'subsample': stats.uniform(0.4, 0.5),
+        'n_estimators': stats.randint(150, 1200),
+        'learning_rate': [0.1, 0.01, 0.001],
+        'subsample': [0.5, 0.6, 0.7, 0.8, 0.9],
         'max_depth': [3, 4, 5, 6, 7, 8, 9],
-        'colsample_bytree': stats.uniform(0.5, 0.45),
-        'min_child_weight': [1, 2, 3],
+        'colsample_bytree': [0.4, 0.6, 0.8, 1.0],
+        'min_child_weight': [1, 3, 5, 7],
+        "reg_alpha": [0, 0.5, 1],
+        "reg_lambda": [1, 1.5, 2, 3, 4.5],
+        "gamma": [0.01, 0.1, 0.3, 0.5, 1, 1.5, 2],
     }
     k_fold = StratifiedKFold(n_splits=5, random_state=42)
     rs_clf = RandomizedSearchCV(
