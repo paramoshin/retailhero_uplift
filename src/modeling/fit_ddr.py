@@ -77,12 +77,13 @@ if __name__ == "__main__":
         f"Accuracy for control classifier on validataion set: "
         f"{clf_control.score(X_valid[valid_is_treatment == 0], y_valid[valid_is_treatment == 0])}"
     )
-    
-    X_train[train_is_treatment == 1]["control_pred"] = clf_control.predict_proba(X_train[train_is_treatment == 1])[:, 1]
+
+    X_train_treatment = X_train[train_is_treatment == 1]
+    X_train_treatment["control_pred"] = clf_control.predict_proba(X_train_treatment)[:, 1]
     xgb_rscv_treatment = RandomizedSearchCV(
         clf, param_distributions=parameters, cv=5, verbose=3, random_state=42, n_jobs=-1
     )
-    clf_treatment = xgb_rscv_treatment.fit(X_train[train_is_treatment == 1], y_train[train_is_treatment == 1])
+    clf_treatment = xgb_rscv_treatment.fit(X_train_treatment, y_train[train_is_treatment == 1])
     print(f"Best params for treatment classifier: {xgb_rscv_treatment.best_params_ }, "
           f"best score: {xgb_rscv_treatment.best_score_}")
     print(
