@@ -9,25 +9,21 @@ from sklearn.model_selection import RandomizedSearchCV
 
 
 if __name__ == "__main__":
-    X_control_train = pd.read_csv(
-        "../../data/processed/two_models/X_control_train.csv", index_col="client_id"
+    X_train = pd.read_csv(
+        "../../data/processed/two_models/X_train.csv", index_col="client_id"
     )
-    y_control_train = pd.read_csv(
-        "../../data/processed/two_models/y_control_train.csv",
+    y_train = pd.read_csv(
+        "../../data/processed/two_models/y_train.csv",
         header=None,
         names=["client_id", "target"],
         index_col="client_id"
     )["target"]
-
-    X_treatment_train = pd.read_csv(
-        "../../data/processed/two_models/X_treatment_train.csv", index_col="client_id"
-    )
-    y_treatment_train = pd.read_csv(
-        "../../data/processed/two_models/y_treatment_train.csv",
+    train_is_treatment = pd.read_csv(
+        "../../data/processed/two_models/X_train_is_treatment.csv",
         header=None,
-        names=["client_id", "target"],
+        names=["client_id", "is_treatment"],
         index_col="client_id"
-    )["target"]
+    )["is_treatment"]
 
     X_valid = pd.read_csv("../../data/processed/two_models/X_valid.csv", index_col="client_id")
     y_valid = pd.read_csv(
@@ -36,16 +32,14 @@ if __name__ == "__main__":
         names=["client_id", "target"],
         index_col="client_id"
     )["target"]
-
     valid_is_treatment = pd.read_csv(
-        "../../data/processed/two_models/valid_is_treatment.csv",
+        "../../data/processed/two_models/X_valid_is_treatment.csv",
         header=None,
         names=["client_id", "is_treatment"],
         index_col="client_id"
     )["is_treatment"]
 
     X_test = pd.read_csv("../../data/processed/two_models/X_test.csv", index_col="client_id")
-
 
     def uplift_score(prediction, treatment, target, rate=0.3):
         """
@@ -74,10 +68,9 @@ if __name__ == "__main__":
     }
 
     xgb_rscv_control = RandomizedSearchCV(
-        clone(clf), param_distributions=parameters, cv=3, verbose=3, random_state=42, n_jobs=-1
+        clf, param_distributions=parameters, cv=5, verbose=3, random_state=42, n_jobs=-1
     )
-    clf_control = xgb_rscv_control.fit(X_control_train, y_control_train)
-    print(f"Score on control train set: {clf_control.score(X_control_train, y_control_train)}")
+    clf_control = xgb_rscv_control.fit(X_train[train_is_treatment == 0], y_train[train_is_treatment == 0])
     print(f"Best params for control classifier: {xgb_rscv_control.best_params_ }, "
           f"best score: {xgb_rscv_control.best_score_}")
     print(
@@ -85,15 +78,13 @@ if __name__ == "__main__":
         f"{clf_control.score(X_valid[valid_is_treatment == 0], y_valid[valid_is_treatment == 0])}"
     )
     
-    X_treatment_train["control_pred"] = clf_control.predict_proba(X_treatment_train)[:, 1]
+    X_train[train_is_treatment == 1]["control_pred"] = clf_control.predict_proba(X_train[train_is_treatment == 1])[:, 1]
     xgb_rscv_treatment = RandomizedSearchCV(
-        clone(clf), param_distributions=parameters, cv=3, verbose=3, random_state=42, n_jobs=-1
+        clf, param_distributions=parameters, cv=5, verbose=3, random_state=42, n_jobs=-1
     )
-    clf_treatment = xgb_rscv_treatment.fit(X_treatment_train, y_treatment_train)
-    print(f"Score on treatment train set: {clf_treatment.score(X_treatment_train, y_treatment_train)}")
+    clf_treatment = xgb_rscv_treatment.fit(X_train[train_is_treatment == 1], y_train[train_is_treatment == 1])
     print(f"Best params for treatment classifier: {xgb_rscv_treatment.best_params_ }, "
           f"best score: {xgb_rscv_treatment.best_score_}")
-
     print(
         f"Accuracy for treatment classifier on validation set: "
         f"{clf_control.score(X_valid[valid_is_treatment == 1], y_valid[valid_is_treatment == 1])}"
@@ -104,7 +95,18 @@ if __name__ == "__main__":
     valid_uplift_score = uplift_score(valid_uplift, valid_is_treatment, y_valid)
     print(f"Uplift score on validation = {valid_uplift_score}, "
           f"(baseline on validation = 0.05081166028966111, "
-          f"difference = {valid_uplift_score - 0.0605}")
+          f"difference = {valid_uplift_score - 0.05081166028966111}")
+
+    # JOIN TRAIN AND VALIDATION SETS
+    X_control = pd.concat([X_train[train_is_treatment == 0], X_valid[valid_is_treatment == 0]], ignore_index=False)
+    X_treatment = pd.concat([X_train[train_is_treatment == 1], X_valid[valid_is_treatment == 1]], ignore_index=False)
+
+    y_control = pd.concat([y_train[train_is_treatment == 0], y_valid[valid_is_treatment == 0]], ignore_index=False)
+    y_treatment = pd.concat([y_train[train_is_treatment == 1], y_valid[valid_is_treatment == 1]], ignore_index=False)
+
+    clf_control = clf_control.fit(X_control, y_control)
+    X_treatment["control_pred"] = clf_control.predict_proba(X_treatment)[:, 1]
+    clf_treatment = clf_treatment.fit(X_treatment, y_treatment)
 
     dt = datetime.now().strftime("%Y-%m-%d_%HH-%MM")
     model_name = dt + "_" + str(clf.__class__).split("'")[1].replace(".", "_")

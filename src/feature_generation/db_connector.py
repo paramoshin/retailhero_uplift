@@ -1,6 +1,6 @@
 from typing import Optional, List, Tuple
 
-from sqlalchemy import func, distinct, cast, Time, extract, within_group
+from sqlalchemy import func, distinct, cast, Time, extract, Integer
 from sqlalchemy.sql.functions import mode
 from sqlalchemy.orm import Session
 
@@ -42,13 +42,19 @@ class DBConnector:
             Purchases.regular_points_spent,
             Purchases.express_points_spent,
             Purchases.purchase_sum,
+
+            func.sum(Products.is_alcohol.cast(Integer)).label("n_alcohols"),
+            func.sum(Products.is_own_trademark.cast(Integer)).label("n_own_trademark"),
+            func.sum(Products.netto).label("sum_netto"),
+            func.avg(Products.netto).label("avg_netto"),
+
             func.count(distinct(Purchases.product_id)).label("n_unique_products"),
             func.sum(Purchases.product_quantity).label("n_products"),
             (func.sum(Purchases.trn_sum_from_iss) / func.coalesce(func.nullif(func.sum(Purchases.product_quantity), 0), 1)).label("avg_product_price"),
             func.sum(Purchases.trn_sum_from_iss).label("sum_trn_sum_from_iss"),
             func.coalesce(func.sum(Purchases.trn_sum_from_red), 0).label("sum_trn_sum_from_red"),
             (func.sum(Purchases.trn_sum_from_iss) - func.coalesce(func.sum(Purchases.trn_sum_from_red), 0)).label("diff_sum_from_iss_red")
-        )
+        ).join(Products, Purchases.product_id == Products.product_id)
 
         subq_last_month_1 = subq_1.filter(Purchases.transaction_datetime > '2019-02-18').group_by(
             Purchases.client_id,
@@ -83,8 +89,21 @@ class DBConnector:
             Clients.first_issue_date,
             Clients.first_redeem_date,
 
+            func.sum(subq_1.c.n_alcohols).label("n_alchohol_products"),
+            func.avg(subq_1.c.n_alcohols).label("avg_alchohol_products_in_purchase"),
+            (func.sum(subq_1.c.n_alcohols) / func.sum(subq_1.c.n_unique_products)).label("pct_alcohol_products"),
+            func.sum(subq_1.c.n_own_trademark).label("n_own_trademark_products"),
+            func.avg(subq_1.c.n_own_trademark).label("pct_onw_trademark_in_purchase"),
+            (func.sum(subq_1.c.n_own_trademark) / func.sum(subq_1.c.n_unique_products)).label("pct_own_trademark_products"),
+            func.sum(subq_1.c.sum_netto).label("sum_sum_netto"),
+            func.avg(subq_1.c.sum_netto).label("avg_sum_netto"),
+            func.stddev(subq_1.c.sum_netto).label("stddev_sum_netto"),
+            func.avg(subq_1.c.avg_netto).label("avg_avg_netto"),
+            func.stddev(subq_1.c.sum_netto).label("stddev_avg_netto"),
+
             func.count(distinct(subq_1.c.transaction_id)).label('n_transactions'),
-            cast(func.avg(subq_1.c.transaction_time), Time).label('avg_transaction_time'),
+            cast(func.avg(subq_1.c.transaction_time), Time).label('avg_transaction_datetime'),
+            func.avg(extract('epoch', subq_1.c.transaction_time)).label('avg_transaction_time'),
             func.stddev(extract('epoch', subq_1.c.transaction_time)).label('stddev_transaction_time'),
             mode().within_group(subq_1.c.transaction_weekday).label("mode_transaction_weekday"),
             func.sum(subq_1.c.regular_points_received).label('sum_regular_points_received'),
@@ -142,7 +161,8 @@ class DBConnector:
             Clients.first_redeem_date,
 
             func.count(distinct(subq_last_month_1.c.transaction_id)).label('last_month_n_transactions'),
-            cast(func.avg(subq_last_month_1.c.transaction_time), Time).label('last_month_avg_transaction_time'),
+            cast(func.avg(subq_last_month_1.c.transaction_time), Time).label('last_month_avg_transaction_datetime'),
+            func.avg(extract('epoch', subq_last_month_1.c.transaction_time)).label('last_month_avg_transaction_time'),
             func.stddev(extract('epoch', subq_last_month_1.c.transaction_time)).label('last_month_stddev_transaction_time'),
             mode().within_group(subq_last_month_1.c.transaction_weekday).label("last_month_mode_transaction_weekday"),
             func.sum(subq_last_month_1.c.regular_points_received).label('last_month_sum_regular_points_received'),
@@ -179,7 +199,7 @@ class DBConnector:
             func.stddev(subq_last_month_1.c.sum_trn_sum_from_iss).label("last_month_stddev_sum_trn_sum_from_iss"),
             func.stddev(subq_last_month_1.c.sum_trn_sum_from_red).label("last_month_stddev_sum_trn_sum_from_red"),
             func.stddev(subq_last_month_1.c.diff_sum_from_iss_red).label("last_month_stddev_diff_sum_from_iss_red"),
-        ).join(
+        ).outerjoin(
             subq_last_month_1, Clients.client_id == subq_last_month_1.c.client_id
         )
 
@@ -201,7 +221,20 @@ class DBConnector:
             subq_2.c.first_issue_date,
             subq_2.c.first_redeem_date,
 
+            subq_2.c.n_alchohol_products,
+            subq_2.c.avg_alchohol_products_in_purchase,
+            subq_2.c.pct_alcohol_products,
+            subq_2.c.n_own_trademark_products,
+            subq_2.c.pct_onw_trademark_in_purchase,
+            subq_2.c.pct_own_trademark_products,
+            subq_2.c.sum_sum_netto,
+            subq_2.c.avg_sum_netto,
+            subq_2.c.stddev_sum_netto,
+            subq_2.c.avg_avg_netto,
+            subq_2.c.stddev_avg_netto,
+
             subq_2.c.n_transactions,
+            subq_2.c.avg_transaction_datetime,
             subq_2.c.avg_transaction_time,
             subq_2.c.stddev_transaction_time,
             subq_2.c.mode_transaction_weekday,
@@ -241,6 +274,7 @@ class DBConnector:
             subq_2.c.stddev_diff_sum_from_iss_red,
 
             subq_last_month_2.c.last_month_n_transactions,
+            subq_last_month_2.c.last_month_avg_transaction_datetime,
             subq_last_month_2.c.last_month_avg_transaction_time,
             subq_last_month_2.c.last_month_stddev_transaction_time,
             subq_last_month_2.c.last_month_mode_transaction_weekday,

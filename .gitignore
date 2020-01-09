@@ -5,3 +5,4 @@ __pycache__
 .idea
 *.zip
 *.csv
+.ipynb_checkpoints

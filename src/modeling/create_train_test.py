@@ -1,3 +1,5 @@
+import datetime
+
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
@@ -55,11 +57,15 @@ if __name__ == "__main__":
     del train_features
 
     train_df = encode_clients_features(train_df)
-    train_df["avg_transaction_hour"] = train_df["avg_transaction_time"].apply(lambda x: x.hour)
-    train_df.drop("avg_transaction_time", axis=1, inplace=True)
+    train_df["avg_transaction_hour"] = train_df["avg_transaction_datetime"].apply(lambda x: x.hour)
+    avg_hour = int(train_df["last_month_avg_transaction_datetime"].dropna().apply(lambda x: x.hour).mean())
+    train_df["last_month_avg_transaction_hour"] = (
+        train_df["last_month_avg_transaction_datetime"].fillna(datetime.time(avg_hour, 0, 0)).apply(lambda x: x.hour)
+    )
+    train_df.drop(["avg_transaction_datetime", "last_month_avg_transaction_datetime"], axis=1, inplace=True)
 
     print("splitting dataframe")
-    train_idxs, valid_idxs = train_test_split(train_client_ids, test_size=0.3, random_state=142)
+    train_idxs, valid_idxs = train_test_split(train_client_ids, test_size=0.2, random_state=42)
     X_train = train_df.loc[train_idxs]
     X_valid = train_df.loc[valid_idxs]
     X_train_is_treatment = train_is_treatment.loc[train_idxs]
@@ -90,8 +96,11 @@ if __name__ == "__main__":
     del test_features
 
     test_df = encode_clients_features(test_df)
-    test_df["avg_transaction_hour"] = test_df["avg_transaction_time"].apply(lambda x: x.hour)
-    test_df.drop("avg_transaction_time", axis=1, inplace=True)
+    test_df["avg_transaction_hour"] = test_df["avg_transaction_datetime"].apply(lambda x: x.hour)
+    test_df["last_month_avg_transaction_hour"] = (
+        test_df["last_month_avg_transaction_datetime"].fillna(datetime.time(avg_hour, 0, 0)).apply(lambda x: x.hour)
+    )
+    test_df.drop(["avg_transaction_datetime", "last_month_avg_transaction_datetime"], axis=1, inplace=True)
 
     assert X_train.columns.tolist() == X_valid.columns.tolist() == test_df.columns.tolist()
 

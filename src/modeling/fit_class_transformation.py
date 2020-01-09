@@ -40,7 +40,6 @@ if __name__ == "__main__":
 
     X_test = pd.read_csv("../../data/processed/two_models/X_test.csv", index_col="client_id")
 
-
     def uplift_score(prediction, treatment, target, rate=0.3):
         """
         Подсчет Uplift Score
@@ -56,27 +55,42 @@ if __name__ == "__main__":
     y_train = (((train_is_treatment == 1) & (y_train == 1)) | ((train_is_treatment == 0) & (y_train == 0))).astype(int)
     y_valid = (((valid_is_treatment == 1) & (y_valid == 1)) | ((valid_is_treatment == 0) & (y_valid == 0))).astype(int)
 
-    params = {
-        "learning_rate": [0.1, 0.01, 0.001],
-        "gamma": [0.01, 0.1, 0.3, 0.5, 1, 1.5, 2],
-        "max_depth": [2, 4, 7, 10],
-        "colsample_bytree": [0.3, 0.6, 0.8, 1.0],
-        "subsample": [0.2, 0.4, 0.5, 0.6, 0.7],
-        "reg_alpha": [0, 0.5, 1],
-        "reg_lambda": [1, 1.5, 2, 3, 4.5],
-        "min_child_weight": [1, 3, 5, 7],
-        "n_estimators": [100, 250, 500, 1000]
-    }
-    clf = xgb.XGBClassifier(objective='binary:logistic')
-    kfold = StratifiedKFold(n_splits=10, random_state=42)
-    xgb_rscv = RandomizedSearchCV(
-        clf, param_distributions=params, scoring="roc_auc", cv=kfold, verbose=3, random_state=42, n_jobs=-1
+    # params = {
+    #     "learning_rate": [0.1, 0.01, 0.001],
+    #     "gamma": [0.01, 0.1, 0.3, 0.5, 1, 1.5, 2],
+    #     "max_depth": [2, 4, 7, 10],
+    #     "colsample_bytree": [0.3, 0.6, 0.8, 1.0],
+    #     "subsample": [0.2, 0.4, 0.5, 0.6, 0.7],
+    #     "reg_alpha": [0, 0.5, 1],
+    #     "reg_lambda": [1, 1.5, 2, 3, 4.5],
+    #     "min_child_weight": [1, 3, 5, 7],
+    #     "n_estimators": [100, 250, 500, 1000]
+    # }
+    best_params = dict(
+        subsample=0.6,
+        reg_lambda=1.5,
+        reg_alpha=0,
+        n_estimators=500,
+        min_child_weight=5,
+        max_depth=4,
+        learning_rate=0.01,
+        gamma=0.1,
+        colsample_bytree=0.6
     )
+    clf = xgb.XGBClassifier(objective='binary:logistic', **best_params)
+    # kfold = StratifiedKFold(n_splits=10, random_state=42)
+    # xgb_rscv = RandomizedSearchCV(
+    #     clf, param_distributions=params, scoring="roc_auc", cv=kfold, verbose=3, random_state=42, n_jobs=-1
+    # )
+
+    # xgb_rscv.fit(X_train, y_train)
+    # print(f"best params: {xgb_rscv.best_params_}")
+    # print(f"validation score: {xgb_rscv.score(X_valid, y_valid)}")
 
     X_train = pd.concat([X_train, X_valid], ignore_index=False)
     y_train = pd.concat([y_train, y_valid], ignore_index=False)
 
-    model = xgb_rscv.fit(X_train, y_train)
+    model = clf.fit(X_train, y_train)
 
     dt = datetime.now().strftime("%Y-%m-%d_%HH-%MM")
     model_name = dt + "_" + str(model.__class__).split("'")[1].replace(".", "_")

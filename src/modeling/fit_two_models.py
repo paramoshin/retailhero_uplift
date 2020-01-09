@@ -55,27 +55,11 @@ if __name__ == "__main__":
         score = treatment_p - control_p
         return score
 
-
+    # best_params = {
+    #     'colsample_bytree': 0.5701975341512912, 'learning_rate': 0.014065852851773964, 'max_depth': 7,
+    #     'min_child_weight': 3, 'n_estimators': 458, 'subsample': 0.8849549260809972
+    # }
     clf = xgb.XGBClassifier(objective='binary:logistic')
-    # {'colsample_bytree': 0.5701975341512912, 'learning_rate': 0.014065852851773964, 'max_depth': 7,
-    # 'min_child_weight': 3, 'n_estimators': 458, 'subsample': 0.8849549260809972}
-
-    # CLASSIFIERS PERFORMANCE ON VALIDATION SET NO OPTIMIZATION
-    clf_control = clone(clf).fit(X_train[train_is_treatment == 0], y_train[train_is_treatment == 0])
-    print(f"Control classifier accuracy on validation: {clf_control.score(X_valid, y_valid)}")
-    predict_valid_control = clf_control.predict_proba(X_valid)[:, 1]
-
-    clf_treatment = clone(clf).fit(X_train[train_is_treatment == 1], y_train[train_is_treatment == 1])
-    print(f"Treatment classifier accuracy on validation: {clf_treatment.score(X_valid, y_valid)}")
-    predict_valid_treatment = clf_treatment.predict_proba(X_valid)[:, 1]
-
-    predict_valid_uplift = predict_valid_treatment - predict_valid_control
-    valid_uplift_score = uplift_score(predict_valid_uplift, valid_is_treatment, y_valid)
-    print(f"Uplift score on validation = {valid_uplift_score}, "
-          f"(baseline on validation = 0.05081166028966111, "
-          f"difference = {valid_uplift_score - 0.05081166028966111}")
-    #
-
     param_dist = {
         'n_estimators': stats.randint(150, 800),
         'learning_rate': stats.uniform(0.01, 0.07),
@@ -84,20 +68,34 @@ if __name__ == "__main__":
         'colsample_bytree': stats.uniform(0.5, 0.45),
         'min_child_weight': [1, 2, 3],
     }
-    kfold = StratifiedKFold(n_splits=5, random_state=42)
+    k_fold = StratifiedKFold(n_splits=5, random_state=42)
     rs_clf = RandomizedSearchCV(
         clf,
-        cv=kfold,
+        cv=k_fold,
         param_distributions=param_dist,
         n_iter=10,
-        scoring='roc_auc',
+        scoring='accuracy',
         verbose=3,
         n_jobs=8,
         random_state=42
     )
-    rs_clf.fit(X_train, y_train)
-    print(f"best params: {rs_clf.best_params_}")
-    print(f"validation score: {rs_clf.score(X_valid, y_valid)}")
+    rs_clf.fit(X_train[train_is_treatment == 0], y_train[train_is_treatment == 0])
+    print(f"Control best params: {rs_clf.best_params_}")
+    print(f"Control validation score: {rs_clf.score(X_valid[valid_is_treatment == 0], y_valid[valid_is_treatment == 0])}")
+    clf_control = rs_clf.best_estimator_
+
+    rs_clf.fit(X_train[train_is_treatment == 1], y_train[train_is_treatment == 1])
+    print(f"Treatment best params: {rs_clf.best_params_}")
+    print(f"Treatment validation score: {rs_clf.score(X_valid[valid_is_treatment == 1], y_valid[valid_is_treatment == 1])}")
+    clf_treatment = rs_clf.best_estimator_
+
+    predict_valid_control = clf_control.predict_proba(X_valid)[:, 1]
+    predict_valid_treatment = clf_treatment.predict_proba(X_valid)[:, 1]
+    predict_valid_uplift = predict_valid_treatment - predict_valid_control
+    valid_uplift_score = uplift_score(predict_valid_uplift, valid_is_treatment, y_valid)
+    print(f"Uplift score on validation = {valid_uplift_score}, "
+          f"(baseline on validation = 0.05081166028966111, "
+          f"difference = {valid_uplift_score - 0.05081166028966111}")
 
     # JOIN TRAIN AND VALIDATION SETS
     X_control = pd.concat([X_train[train_is_treatment == 0], X_valid[valid_is_treatment == 0]], ignore_index=False)
@@ -118,8 +116,8 @@ if __name__ == "__main__":
 
     # FITTING ON WHOLE TRAINING SET
     print("fitting classifiers on whole training set")
-    clf_control = rs_clf.best_estimator_.fit(X_control, y_control)
-    clf_treatment = rs_clf.best_estimator_.fit(X_treatment, y_treatment)
+    clf_control = clone(clf_control).fit(X_control, y_control)
+    clf_treatment = clone(clf_treatment).fit(X_treatment, y_treatment)
     #
 
     # SAVING MODEL AND SUBMISSION
