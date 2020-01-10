@@ -1,12 +1,12 @@
 from datetime import datetime
 import pickle
 import json
+import sys
+from pathlib import Path
+p = str(Path(".").resolve().parent.parent)
+sys.path.extend([p])
 
 import pandas as pd
-import numpy as np
-import xgboost as xgb
-from scipy import stats
-from sklearn.model_selection import RandomizedSearchCV, StratifiedKFold
 
 from src.modeling.read_data import *
 from src.modeling.random_search_optimization import optimize
