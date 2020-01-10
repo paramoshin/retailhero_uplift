@@ -1,3 +1,8 @@
+import sys
+from pathlib import Path
+p = str(Path(".").resolve().parent.parent)
+sys.path.extend([p])
+
 import pandas as pd
 from sqlalchemy import Table, MetaData
 

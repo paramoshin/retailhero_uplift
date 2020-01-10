@@ -76,21 +76,21 @@ if __name__ == "__main__":
         clf,
         cv=k_fold,
         param_distributions=param_dist,
-        n_iter=10,
-        scoring='accuracy',
+        n_iter=20,
+        scoring='f1',
         verbose=3,
-        n_jobs=8,
-        random_state=42
+        n_jobs=-1,
+        random_state=142
     )
-    rs_clf.fit(X_train[train_is_treatment == 0], y_train[train_is_treatment == 0])
-    print(f"Control best params: {rs_clf.best_params_}")
-    print(f"Control validation score: {rs_clf.score(X_valid[valid_is_treatment == 0], y_valid[valid_is_treatment == 0])}")
-    clf_control = rs_clf.best_estimator_
+    rs_clf_cntrl = clone(rs_clf).fit(X_train[train_is_treatment == 0], y_train[train_is_treatment == 0])
+    print(f"Control best params: {rs_clf_cntrl.best_params_}")
+    print(f"Control validation score: {rs_clf_cntrl.best_estimator_.score(X_valid[valid_is_treatment == 0], y_valid[valid_is_treatment == 0])}")
+    clf_control = rs_clf_cntrl.best_estimator_
 
-    rs_clf.fit(X_train[train_is_treatment == 1], y_train[train_is_treatment == 1])
-    print(f"Treatment best params: {rs_clf.best_params_}")
-    print(f"Treatment validation score: {rs_clf.score(X_valid[valid_is_treatment == 1], y_valid[valid_is_treatment == 1])}")
-    clf_treatment = rs_clf.best_estimator_
+    rs_clf_trtmnt = clone(rs_clf).fit(X_train[train_is_treatment == 1], y_train[train_is_treatment == 1])
+    print(f"Treatment best params: {rs_clf_trtmnt.best_params_}")
+    print(f"Treatment validation score: {rs_clf_trtmnt.best_estimator_.score(X_valid[valid_is_treatment == 1], y_valid[valid_is_treatment == 1])}")
+    clf_treatment = rs_clf_trtmnt.best_estimator_
 
     predict_valid_control = clf_control.predict_proba(X_valid)[:, 1]
     predict_valid_treatment = clf_treatment.predict_proba(X_valid)[:, 1]
@@ -119,8 +119,8 @@ if __name__ == "__main__":
 
     # FITTING ON WHOLE TRAINING SET
     print("fitting classifiers on whole training set")
-    clf_control = clone(clf_control).fit(X_control, y_control)
-    clf_treatment = clone(clf_treatment).fit(X_treatment, y_treatment)
+    clf_control = clf_control.fit(X_control, y_control)
+    clf_treatment = clf_treatment.fit(X_treatment, y_treatment)
     #
 
     # SAVING MODEL AND SUBMISSION

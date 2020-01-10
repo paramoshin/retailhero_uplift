@@ -1,4 +1,8 @@
 import datetime
+import sys
+from pathlib import Path
+p = str(Path(".").resolve().parent.parent)
+sys.path.extend([p])
 
 import pandas as pd
 from sklearn.model_selection import train_test_split

@@ -1,4 +1,8 @@
 from typing import Optional, List, Tuple
+import sys
+from pathlib import Path
+p = str(Path(".").resolve().parent.parent)
+sys.path.extend([p])
 
 from sqlalchemy import func, distinct, cast, Time, extract, Integer
 from sqlalchemy.sql.functions import mode
