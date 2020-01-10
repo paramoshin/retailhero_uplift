@@ -63,9 +63,9 @@ if __name__ == "__main__":
 
     r = db_client.get_first(Purchases)
     n_rows = db_client.get_number_of_rows(Purchases)
-    if not r or n_rows != 45786568:
+    if not r or n_rows != 45780094:
         print("loading purchases")
-        if r and n_rows != 45786568:
+        if r and n_rows != 45780094:
             db_client.clean_table(Purchases)
         metadata = MetaData()
         metadata.reflect(f.engine, only=["purchases"])
