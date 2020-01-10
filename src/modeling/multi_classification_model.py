@@ -1,42 +1,19 @@
 from datetime import datetime
+import pickle
+import json
 
 import pandas as pd
 import numpy as np
 import xgboost as xgb
+from scipy import stats
+from sklearn.model_selection import RandomizedSearchCV, StratifiedKFold
 
+from .read_data import *
+from .random_search_optimization import optimize
+from .utils import uplift_score
 
 if __name__ == "__main__":
-    X_train = pd.read_csv(
-        "../../data/processed/two_models/X_train.csv", index_col="client_id"
-    )
-    y_train = pd.read_csv(
-        "../../data/processed/two_models/y_train.csv",
-        header=None,
-        names=["client_id", "target"],
-        index_col="client_id"
-    )["target"]
-    train_is_treatment = pd.read_csv(
-        "../../data/processed/two_models/X_train_is_treatment.csv",
-        header=None,
-        names=["client_id", "is_treatment"],
-        index_col="client_id"
-    )["is_treatment"]
-
-    X_valid = pd.read_csv("../../data/processed/two_models/X_valid.csv", index_col="client_id")
-    y_valid = pd.read_csv(
-        "../../data/processed/two_models/y_valid.csv",
-        header=None,
-        names=["client_id", "target"],
-        index_col="client_id"
-    )["target"]
-    valid_is_treatment = pd.read_csv(
-        "../../data/processed/two_models/X_valid_is_treatment.csv",
-        header=None,
-        names=["client_id", "is_treatment"],
-        index_col="client_id"
-    )["is_treatment"]
-
-    X_test = pd.read_csv("../../data/processed/two_models/X_test.csv", index_col="client_id")
+    X_train, y_train, train_is_treatment, X_valid, y_valid, valid_is_treatment, X_test = read_train_test()
 
     X_train["new_target"] = 0
     X_train.loc[(train_is_treatment == 0) & (y_train == 1), "new_target"] = 1
@@ -52,34 +29,19 @@ if __name__ == "__main__":
     new_y_valid = X_valid["new_target"]
     X_valid.drop("new_target", axis=1, inplace=True)
 
-    clf = xgb.XGBClassifier().fit(X_train, new_y_train)
-    print(f"classifier score on validation set: {clf.score(X_valid, new_y_valid)}")
-    class_probs = clf.predict_proba(X_valid)
-    valid_uplift = class_probs[:, 0] + class_probs[:, 3] - class_probs[:, 1] - class_probs[:, 2]
+    X_train, y_train = join_train_validation(X_train, X_valid, y_train, y_valid)
 
-    def uplift_score(prediction, treatment, target, rate=0.3):
-        """
-        Подсчет Uplift Score
-        """
-        order = np.argsort(-prediction)
-        treatment_n = int((treatment == 1).sum() * rate)
-        treatment_p = target[order][treatment[order] == 1][:treatment_n].mean()
-        control_n = int((treatment == 0).sum() * rate)
-        control_p = target[order][treatment[order] == 0][:control_n].mean()
-        score = treatment_p - control_p
-        return score
-
-    print(f"uplift score on validation: {uplift_score(valid_uplift, valid_is_treatment, y_valid)}")
-
-    X_train = pd.concat([X_train, X_valid], ignore_index=False)
-    y_train = pd.concat([new_y_train, new_y_valid], ignore_index=False)
-
-    clf = xgb.XGBClassifier().fit(X_train, y_train)
+    model, best_params = optimize(X_train, y_train, n_class=4, objective="multi:softmax", scoring="accuracy")
 
     dt = datetime.now().strftime("%Y-%m-%d_%HH-%MM")
-    model_name = dt + "_" + str(clf.__class__).split("'")[1].replace(".", "_")
+    model_name = "mutliclass" + dt + "_" + str(model.__class__).split("'")[1].replace(".", "_")
+    f_name = "../../models/mutliclass/" + model_name
 
-    class_probs = clf.predict_proba(X_test)
+    pickle.dump(model, open(f_name + ".pkl", "wb"))
+    with open(f_name + "best_params.json", "w") as f:
+        f.write(json.dumps(best_params))
+
+    class_probs = model.predict_proba(X_test)
     test_uplift = class_probs[:, 0] + class_probs[:, 3] - class_probs[:, 1] - class_probs[:, 2]
     df_submission = pd.DataFrame({'uplift': test_uplift}, index=X_test.index)
     df_submission.to_csv(f'../../data/submissions/multiclass/{model_name}.csv')
