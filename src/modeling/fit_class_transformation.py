@@ -4,8 +4,8 @@ import json
 
 import pandas as pd
 
-from .read_data import *
-from .random_search_optimization import optimize
+from src.modeling.read_data import *
+from src.modeling.random_search_optimization import optimize
 
 if __name__ == "__main__":
     X_train, y_train, train_is_treatment, X_valid, y_valid, valid_is_treatment, X_test = read_train_test()
