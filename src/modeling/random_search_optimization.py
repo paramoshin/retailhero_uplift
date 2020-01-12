@@ -36,6 +36,6 @@ def optimize(
     )
     rs_clf.fit(X_train, y_train)
     print(f"Best parametrs: {rs_clf.best_params_}; best score: {rs_clf.best_score_}")
-    if X_val and y_val:
+    if (X_val is not None) and (y_val is not None):
         print(f"Score on valiadtion set: {rs_clf.best_estimator_.score(X_val, y_val)}")
     return rs_clf.best_estimator_, rs_clf.best_params_
