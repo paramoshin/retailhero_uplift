@@ -25,7 +25,7 @@ def optimize(
         "colsample_bytree": [0.5, 0.6, 0.8, 1.0],
         "subsample": [0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
         "reg_alpha": [0, 0.5, 1],
-        "reg_lambda": [0.1, 1.0, 5.0, 10.0, 50.0],
+        "reg_lambda": [0.1, 1.0, 5.0, 10.0, 50.0, 100.0],
         "min_child_weight": [1, 3, 5, 7, 12],
         "n_estimators": [100, 250, 500, 1000]
     }
