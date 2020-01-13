@@ -27,6 +27,7 @@ if __name__ == "__main__":
         X_train_control, y_train_control, X_val=X_valid_control, y_val=y_valid_control
     )
     X_train_treatment["control_pred"] = clf_control.predict_proba(X_train_treatment)[:, 1]
+    X_valid_treatment["control_pred"] = clf_control.predict_proba(X_valid_treatment)[:, 1]
     clf_treatment, best_params_treatment = optimize(
         X_train_treatment, y_train_treatment, X_val=X_valid_treatment, y_val=y_valid_treatment
     )
