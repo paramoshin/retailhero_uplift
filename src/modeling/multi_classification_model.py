@@ -31,7 +31,7 @@ if __name__ == "__main__":
 
     X_train, y_train = join_train_validation(X_train, X_valid, y_train, y_valid)
 
-    model, best_params = optimize(X_train, y_train, n_class=4, objective="multi:softmax", scoring="accuracy")
+    model, best_params = optimize(X_train, y_train, num_class=4, objective="multi:softprob", scoring="accuracy")
 
     dt = datetime.now().strftime("%Y-%m-%d_%HH-%MM")
     model_name = "mutliclass" + dt + "_" + str(model.__class__).split("'")[1].replace(".", "_")

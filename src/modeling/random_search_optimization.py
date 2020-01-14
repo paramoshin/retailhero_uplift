@@ -5,7 +5,7 @@ from sklearn.model_selection import StratifiedKFold, RandomizedSearchCV
 def optimize(
         X_train,
         y_train,
-        n_class=2,
+        num_class=2,
         objective="binary:logistic",
         scoring="roc_auc",
         n_iter=40,
@@ -15,7 +15,7 @@ def optimize(
         X_val=None,
         y_val=None
     ):
-    clf = xgb.XGBClassifier(objective=objective, n_class=n_class)
+    clf = xgb.XGBClassifier(objective=objective, num_class=num_class)
     if not cv:
         cv = StratifiedKFold(n_splits=5, random_state=seed)
     space = {
