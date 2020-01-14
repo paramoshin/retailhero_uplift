@@ -31,7 +31,9 @@ if __name__ == "__main__":
     clf_treatment, best_params_treatment = optimize(
         X_train_treatment, y_train_treatment, X_val=X_valid_treatment, y_val=y_valid_treatment
     )
-    valid_uplift = clf_treatment.predict_proba(X_valid)[:, 1] - clf_control.predict_proba(X_valid)[:, 1]
+    p_control_valid = clf_control.predict_proba(X_valid)[:, 1]
+    X_valid["control_pred"] = p_control_valid
+    valid_uplift = clf_treatment.predict_proba(X_valid)[:, 1] - p_control_valid
     valid_uplift_score = uplift_score(valid_uplift, valid_is_treatment, y_valid)
     print(f"Uplit score on validation: {valid_uplift_score}")
 
@@ -60,8 +62,9 @@ if __name__ == "__main__":
         clf_treatment, open(f_name + "_treatment.pkl", "wb")
     )
 
-    X_test["control_pred"] = clf_control.predict_proba(X_test)[:, 1]
+    p_control_test = clf_control.predict_proba(X_test)[:, 1]
+    X_test["control_pred"] = p_control_test
     predict_test_treatment = clf_treatment.predict_proba(X_test)[:, 1]
-    predict_test_uplift = clf_treatment.predict_proba(X_test)[:, 1] - clf_control.predict_proba(X_test)[:, 1]
+    predict_test_uplift = predict_test_treatment - p_control_test
     df_submission = pd.DataFrame({'uplift': predict_test_uplift}, index=X_test.index)
     df_submission.to_csv(f'../../data/submissions/ddr/{model_name}.csv')
