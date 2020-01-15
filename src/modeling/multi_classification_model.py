@@ -34,8 +34,8 @@ if __name__ == "__main__":
     model, best_params = optimize(X_train, y_train, num_class=4, objective="multi:softprob", scoring="accuracy")
 
     dt = datetime.now().strftime("%Y-%m-%d_%HH-%MM")
-    model_name = "mutliclass" + dt + "_" + str(model.__class__).split("'")[1].replace(".", "_")
-    f_name = "../../models/mutliclass/" + model_name
+    model_name = "multiclass" + dt + "_" + str(model.__class__).split("'")[1].replace(".", "_")
+    f_name = "../../models/multiclass/" + model_name
 
     pickle.dump(model, open(f_name + ".pkl", "wb"))
     with open(f_name + "best_params.json", "w") as f:
