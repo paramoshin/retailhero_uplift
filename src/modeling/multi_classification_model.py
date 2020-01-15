@@ -29,9 +29,12 @@ if __name__ == "__main__":
     new_y_valid = X_valid["new_target"]
     X_valid.drop("new_target", axis=1, inplace=True)
 
-    X_train, y_train = join_train_validation(X_train, X_valid, y_train, y_valid)
+    model, best_params = optimize(
+        X_train, y_train, num_class=4, objective="multi:softprob", scoring="accuracy", X_val=X_valid, y_val=y_valid
+    )
 
-    model, best_params = optimize(X_train, y_train, num_class=4, objective="multi:softprob", scoring="accuracy")
+    X_train, y_train = join_train_validation(X_train, X_valid, y_train, y_valid)
+    model.fit(X_train, y_train)
 
     dt = datetime.now().strftime("%Y-%m-%d_%HH-%MM")
     model_name = "multiclass" + dt + "_" + str(model.__class__).split("'")[1].replace(".", "_")

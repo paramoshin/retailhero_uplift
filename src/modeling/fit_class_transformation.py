@@ -17,8 +17,10 @@ if __name__ == "__main__":
     y_train = (((train_is_treatment == 1) & (y_train == 1)) | ((train_is_treatment == 0) & (y_train == 0))).astype(int)
     y_valid = (((valid_is_treatment == 1) & (y_valid == 1)) | ((valid_is_treatment == 0) & (y_valid == 0))).astype(int)
 
-    X_train, y_train = join_train_validation(X_train, X_valid, y_train, y_valid)
     model, best_params = optimize(X_train, y_train)
+
+    X_train, y_train = join_train_validation(X_train, X_valid, y_train, y_valid)
+    model.fit(X_train, y_train)
 
     dt = datetime.now().strftime("%Y-%m-%d_%HH-%MM")
     model_name = "class_transform_" + dt + "_" + str(model.__class__).split("'")[1].replace(".", "_")
