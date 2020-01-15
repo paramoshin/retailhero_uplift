@@ -15,7 +15,10 @@ def optimize(
         X_val=None,
         y_val=None
     ):
-    clf = xgb.XGBClassifier(objective=objective, num_class=num_class)
+    if num_class == 2:
+        clf = xgb.XGBClassifier(objective=objective)
+    else:
+        clf = xgb.XGBClassifier(objective=objective, num_class=num_class)
     if not cv:
         cv = StratifiedKFold(n_splits=5, random_state=seed)
     space = {
