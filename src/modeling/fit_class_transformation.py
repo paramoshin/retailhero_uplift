@@ -7,6 +7,7 @@ p = str(Path(".").resolve().parent.parent)
 sys.path.extend([p])
 
 import pandas as pd
+from sklearn.base import clone
 
 from src.modeling.read_data import *
 from src.modeling.random_search_optimization import optimize
@@ -20,7 +21,7 @@ if __name__ == "__main__":
     model, best_params = optimize(X_train, y_train)
 
     X_train, y_train = join_train_validation(X_train, X_valid, y_train, y_valid)
-    model.fit(X_train, y_train)
+    model = clone(model).fit(X_train, y_train)
 
     dt = datetime.now().strftime("%Y-%m-%d_%HH-%MM")
     model_name = "class_transform_" + dt + "_" + str(model.__class__).split("'")[1].replace(".", "_")
