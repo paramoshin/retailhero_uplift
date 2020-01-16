@@ -40,7 +40,10 @@ if __name__ == "__main__":
     # JOIN TRAIN AND VALIDATION SETS
     X_control, y_control = join_train_validation(X_train_control, X_valid_control, y_train_control, y_valid_control)
     X_treatment, y_treatment = join_train_validation(
-        X_train_treatment, X_valid_treatment, y_train_treatment, y_valid_treatment
+        X_train_treatment.drop(["control_pred"], axis=1),
+        X_valid_treatment.drop(["control_pred"], axis=1),
+        y_train_treatment,
+        y_valid_treatment
     )
     clf_control = xgb.XGBClassifier(objective="binary:logistic", **best_params_control).fit(X_control, y_control)
     X_treatment["control_pred"] = clf_control.predict_proba(X_treatment)[:, 1]
