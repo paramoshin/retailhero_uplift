@@ -14,7 +14,7 @@ from src.modeling.utils import uplift_score
 if __name__ == "__main__":
     X_train, y_train, train_is_treatment, X_valid, y_valid, valid_is_treatment, X_test = read_train_test()
 
-    skf = StratifiedKFold(n_splits=5, random_state=42)
+    skf = StratifiedKFold(n_splits=5, random_state=42, shuffle=True)
     best_params = {
         "subsample": 0.7,
         "reg_lambda": 1.0,
