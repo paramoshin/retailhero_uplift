@@ -55,7 +55,9 @@ if __name__ == "__main__":
         print(f"    Treatment classifier score on test: {clf_treatment.score(X_test, y_test)}\n")
 
         uplift_prediction_train = clf_treatment.predict_proba(X_train)[:, 1] - clf_control.predict_proba(X_train)[:, 1]
-        print(f"    Uplift score on train: {uplift_score(uplift_prediction_train, train_is_treatment, y_train)}\n")
+        print(f"    Predicted uplift score on train: {uplift_score(uplift_prediction_train, train_is_treatment, y_train)}")
+        print(f"    True uplift score on train: {uplift_score(y_train, train_is_treatment, y_train)}\n")
 
         uplift_prediction_test = clf_treatment.predict_proba(X_test)[:, 1] - clf_control.predict_proba(X_test)[:, 1]
-        print(f"    Uplift score on test: {uplift_score(uplift_prediction_test, test_is_treatment, y_test)}\n")
+        print(f"    Predicted uplift score on test: {uplift_score(uplift_prediction_test, test_is_treatment, y_test)}")
+        print(f"    True uplift score on test: {uplift_score(y_test, test_is_treatment, y_test)}\n")
