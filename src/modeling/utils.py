@@ -15,6 +15,6 @@ def uplift_score(prediction, treatment, target, rate=0.3):
     control_n = int((treatment == 0).sum() * rate)
     print(f"    number of control users: {treatment_n}")
     control_p = target[order][treatment[order] == 0][:control_n].mean()
-    print(f"    control p: {treatment_p}")
+    print(f"    control p: {control_p}")
     score = treatment_p - control_p
     return score

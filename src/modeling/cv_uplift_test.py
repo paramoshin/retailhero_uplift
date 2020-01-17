@@ -48,14 +48,14 @@ if __name__ == "__main__":
 
         clf_control.fit(X_train_control, y_train_control)
         print(f"    Control classifier score on train: {clf_control.score(X_train_control, y_train_control)}")
-        print(f"    Control classifier score on test: {clf_control.score(X_test, y_test)}")
+        print(f"    Control classifier score on test: {clf_control.score(X_test, y_test)}\n")
 
         clf_treatment.fit(X_train_treatment, y_train_treatment)
         print(f"    Treatment classifier score on train: {clf_control.score(X_train_treatment, y_train_treatment)}")
-        print(f"    Treatment classifier score on test: {clf_treatment.score(X_test, y_test)}")
+        print(f"    Treatment classifier score on test: {clf_treatment.score(X_test, y_test)}\n")
 
         uplift_prediction_train = clf_treatment.predict_proba(X_train)[:, 1] - clf_control.predict_proba(X_train)[:, 1]
-        print(f"    Uplift score on train: {uplift_score(uplift_prediction_train, train_is_treatment, y_train)}")
+        print(f"    Uplift score on train: {uplift_score(uplift_prediction_train, train_is_treatment, y_train)}\n")
 
         uplift_prediction_test = clf_treatment.predict_proba(X_test)[:, 1] - clf_control.predict_proba(X_test)[:, 1]
-        print(f"    Uplift score on test: {uplift_score(uplift_prediction_test, test_is_treatment, y_test)}")
+        print(f"    Uplift score on test: {uplift_score(uplift_prediction_test, test_is_treatment, y_test)}\n")
