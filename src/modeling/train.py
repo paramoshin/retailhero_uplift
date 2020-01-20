@@ -77,9 +77,9 @@ if __name__ == "__main__":
         )
 
         if args.model == "xgb":
-            clf_control = xgb.XGBClassifier(**xgb_best_params)\
+            clf_control = xgb.XGBClassifier(objective="binary:logistic", **xgb_best_params)\
                 .fit(X_train_control, y_train_control)
-            clf_treatment = xgb.XGBClassifier(**xgb_best_params)\
+            clf_treatment = xgb.XGBClassifier(objective="binary:logistic", **xgb_best_params)\
                 .fit(X_train_treatment, y_train_treatment)
         else:
             clf_control = models[args.model].fit(X_train_control, y_train_control)
