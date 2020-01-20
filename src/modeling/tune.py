@@ -30,7 +30,7 @@ if __name__ == "__main__":
     rs_clf = RandomizedSearchCV(
         xgb.XGBClassifier(objective="binary:logistic"),
         param_distributions=space,
-        scoring="logloss",
+        scoring="neg_log_loss",
         cv=skf,
         n_iter=20,
         verbose=3,
