@@ -7,7 +7,7 @@ def optimize(
         y_train,
         num_class=2,
         objective="binary:logistic",
-        scoring="roc_auc",
+        scoring="neg_log_loss",
         n_iter=40,
         seed=42,
         params=None,
