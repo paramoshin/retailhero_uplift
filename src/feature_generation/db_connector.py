@@ -97,7 +97,7 @@ class DBConnector:
             func.avg(subq_1.c.n_alcohols).label("avg_alchohol_products_in_purchase"),
             (func.sum(subq_1.c.n_alcohols) / func.sum(subq_1.c.n_unique_products)).label("pct_alcohol_products"),
             func.sum(subq_1.c.n_own_trademark).label("n_own_trademark_products"),
-            func.avg(subq_1.c.n_own_trademark).label("pct_onw_trademark_in_purchase"),
+            func.avg(subq_1.c.n_own_trademark).label("avg_onw_trademark_in_purchase"),
             (func.sum(subq_1.c.n_own_trademark) / func.sum(subq_1.c.n_unique_products)).label("pct_own_trademark_products"),
             func.sum(subq_1.c.sum_netto).label("sum_sum_netto"),
             func.avg(subq_1.c.sum_netto).label("avg_sum_netto"),

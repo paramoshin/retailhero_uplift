@@ -7,8 +7,7 @@ import pandas as pd
 import xgboost as xgb
 from sklearn.model_selection import StratifiedKFold
 
-from src.modeling.read_data import *
-from src.modeling.utils import uplift_score
+from src.modeling.utils.import *
 
 
 if __name__ == "__main__":

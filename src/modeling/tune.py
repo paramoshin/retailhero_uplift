@@ -10,8 +10,7 @@ import xgboost as xgb
 from sklearn.model_selection import RandomizedSearchCV, StratifiedKFold
 from sklearn.base import clone
 
-from src.modeling.read_data import *
-from src.modeling.utils import uplift_score
+from src.modeling.utils import *
 from src.modeling.models import models
 
 if __name__ == "__main__":

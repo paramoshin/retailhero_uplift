@@ -7,7 +7,7 @@ sys.path.extend([p])
 import pandas as pd
 import joblib
 
-from src.modeling.read_data import *
+from src.modeling.utils import *
 
 if __name__ == "__main__":
     X_train, y_train, train_is_treatment, X_valid, y_valid, valid_is_treatment, X_test = read_train_test()
@@ -21,21 +21,26 @@ if __name__ == "__main__":
 
         folders = list(Path(f"../../models/two_models/folds/").glob("*"))
         folder = sorted(folders)[-1]
+        # clf_path = list(folder.glob(f"*_{i}_class_transform.pkl"))[0]
         control_path = list(folder.glob(f"*_{i}_control.pkl"))[0]
         treatment_path = list(folder.glob(f"*_{i}_treatment.pkl"))[0]
+        # clf = joblib.load(clf_path)
         clf_control = joblib.load(control_path)
         clf_treatment = joblib.load(treatment_path)
 
         treatment_proba = clf_treatment.predict_proba(X_test)[:, 1]
         control_proba = clf_control.predict_proba(X_test)[:, 1]
+        # proba = clf.predict_proba(X_test)[:, 1]
         uplift_prediction = treatment_proba - control_proba
+        # uplift_prediction = 2 * proba - 1
         if i == 0:
             preds = uplift_prediction
         else:
             preds += uplift_prediction
 
     preds /= 5
+    # uplift_prediction = 2 * proba - 1
     df_submission = pd.DataFrame({'uplift': preds}, index=X_test.index)
-    submission_folder = Path(f"../../data/submissions/two_models/folds")
-    submission_folder.mkdir(exist_ok=True)
+    submission_folder = Path(f"../../data/submissions/class_transform/folds")
+    submission_folder.mkdir(parents=True, exist_ok=True)
     df_submission.to_csv(f'{submission_folder}/submission_{dt}.csv')

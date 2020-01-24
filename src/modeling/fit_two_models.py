@@ -9,9 +9,9 @@ sys.path.extend([p])
 import pandas as pd
 import xgboost as xgb
 
-from src.modeling.read_data import *
+from src.modeling.utils import *
 from src.modeling.random_search_optimization import optimize
-from src.modeling.utils import uplift_score
+
 
 if __name__ == "__main__":
     X_train, y_train, train_is_treatment, X_valid, y_valid, valid_is_treatment, X_test = read_train_test()
