@@ -63,54 +63,54 @@ if __name__ == "__main__":
     with open("../../models/treatment_xgb_best_params.json", "r") as f:
         treatment_best_params = json.load(f)
 
-    # for i in range(5):
-    #     print(f"Fold {i + 1}")
-    #     test_idx = folds[folds["fold"] == i].index
-    #     train_idx = folds[folds["fold"] != i].index
-    #
-    #     train_data = X_train.loc[train_idx]
-    #     train_target = y_train.loc[train_idx]
-    #     train_data_is_treatment = train_is_treatment.loc[train_idx]
-    #
-    #     test_data = X_train.loc[test_idx]
-    #     test_target = y_train.loc[test_idx]
-    #     test_data_is_treatment = train_is_treatment.loc[test_idx]
-    #
-    #     X_train_control, X_train_treatment, y_train_control, y_train_treatment = split_control_treatment(
-    #         train_data, train_target, train_data_is_treatment
-    #     )
-    #     X_valid_control, X_valid_treatment, y_valid_control, y_valid_treatment = split_control_treatment(
-    #         test_data, test_target, test_data_is_treatment
-    #     )
-    #
-    #     if args.model == "xgb":
-    #         clf_control = xgb.XGBClassifier(objective="binary:logistic", **control_best_params)\
-    #             .fit(X_train_control, y_train_control)
-    #         clf_treatment = xgb.XGBClassifier(objective="binary:logistic", **treatment_best_params)\
-    #             .fit(X_train_treatment, y_train_treatment)
-    #     else:
-    #         clf_control = models[args.model].fit(X_train_control, y_train_control)
-    #         clf_treatment = models[args.model].fit(X_train_treatment, y_train_treatment)
-    #
-    #     treatment_proba = clf_treatment.predict_proba(test_data)[:, 1]
-    #     control_proba = clf_control.predict_proba(test_data)[:, 1]
-    #     uplift_prediction = treatment_proba - control_proba
-    #     up_score = uplift_score(uplift_prediction, test_target, test_data_is_treatment)
-    #
-    #     metrics["control_acc"].append(clf_control.score(test_data, test_target))
-    #     metrics["treatment_acc"].append(clf_treatment.score(test_data, test_target))
-    #     metrics["control_auc"].append(roc_auc_score(test_target, control_proba))
-    #     metrics["treatment_auc"].append(roc_auc_score(test_target, treatment_proba))
-    #     metrics["uplift"].append(up_score)
-    #
-    #     folder = Path(f"../../models/two_models/folds/{dt}")
-    #     folder.mkdir(parents=True, exist_ok=True)
-    #     model_name = args.model + f"_fold_{i}"
-    #     joblib.dump(clf_control, (folder / Path(model_name + "_control.pkl")).resolve())
-    #     joblib.dump(clf_treatment, (folder / Path(model_name + "_treatment.pkl")).resolve())
-    #
-    # print(metrics)
-    # print(dict(zip(metrics.keys(), list(map(np.mean, metrics.values())))))
+    for i in range(5):
+        print(f"Fold {i + 1}")
+        test_idx = folds[folds["fold"] == i].index
+        train_idx = folds[folds["fold"] != i].index
+    
+        train_data = X_train.loc[train_idx]
+        train_target = y_train.loc[train_idx]
+        train_data_is_treatment = train_is_treatment.loc[train_idx]
+    
+        test_data = X_train.loc[test_idx]
+        test_target = y_train.loc[test_idx]
+        test_data_is_treatment = train_is_treatment.loc[test_idx]
+    
+        X_train_control, X_train_treatment, y_train_control, y_train_treatment = split_control_treatment(
+            train_data, train_target, train_data_is_treatment
+        )
+        X_valid_control, X_valid_treatment, y_valid_control, y_valid_treatment = split_control_treatment(
+            test_data, test_target, test_data_is_treatment
+        )
+    
+        if args.model == "xgb":
+            clf_control = xgb.XGBClassifier(objective="binary:logistic", **control_best_params)\
+                .fit(X_train_control, y_train_control)
+            clf_treatment = xgb.XGBClassifier(objective="binary:logistic", **treatment_best_params)\
+                .fit(X_train_treatment, y_train_treatment)
+        else:
+            clf_control = models[args.model].fit(X_train_control, y_train_control)
+            clf_treatment = models[args.model].fit(X_train_treatment, y_train_treatment)
+    
+        treatment_proba = clf_treatment.predict_proba(test_data)[:, 1]
+        control_proba = clf_control.predict_proba(test_data)[:, 1]
+        uplift_prediction = treatment_proba - control_proba
+        up_score = uplift_score(uplift_prediction, test_target, test_data_is_treatment)
+    
+        metrics["control_acc"].append(clf_control.score(test_data, test_target))
+        metrics["treatment_acc"].append(clf_treatment.score(test_data, test_target))
+        metrics["control_auc"].append(roc_auc_score(test_target, control_proba))
+        metrics["treatment_auc"].append(roc_auc_score(test_target, treatment_proba))
+        metrics["uplift"].append(up_score)
+    
+        folder = Path(f"../../models/two_models/folds/{dt}")
+        folder.mkdir(parents=True, exist_ok=True)
+        model_name = args.model + f"_fold_{i}"
+        joblib.dump(clf_control, (folder / Path(model_name + "_control.pkl")).resolve())
+        joblib.dump(clf_treatment, (folder / Path(model_name + "_treatment.pkl")).resolve())
+    
+    print(metrics)
+    print(dict(zip(metrics.keys(), list(map(np.mean, metrics.values())))))
 
     if args.refit:
         X_train, y_train, train_is_treatment, X_valid, y_valid, valid_is_treatment, X_test = read_train_test()
