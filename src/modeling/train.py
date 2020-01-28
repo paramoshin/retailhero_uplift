@@ -20,7 +20,6 @@ from src.modeling.models import models
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     arg = parser.add_argument
-    arg('--model', default='xgb')
     arg('--refit', type=bool, default=False)
 
     args = parser.parse_args()
@@ -31,32 +30,12 @@ if __name__ == "__main__":
     folds = pd.read_csv("../../data/processed/folds.csv", index_col="client_id")
     dt = datetime.now().strftime("%Y-%m-%d-%H-%M")
 
-    if args.model != "xgb":
-        X_train.fillna(-999, inplace=True)
-        X_test.fillna(-999, inplace=True)
-        if args.model in ("logreg", "knn"):
-            scaler = StandardScaler()
-            X_train = pd.DataFrame(scaler.fit_transform(X_train), index=X_train.index)
-            X_test = pd.DataFrame(scaler.transform(X_test), index=X_test.index)
-
     metrics = {
         "control_acc": [],
         "treatment_acc": [],
         "control_auc": [],
         "treatment_auc": [],
         "uplift": []
-    }
-
-    xgb_best_params = {
-        "subsample": 0.7,
-        "reg_lambda": 1.0,
-        "reg_alpha": 0,
-        "n_estimators": 1000,
-        "min_child_weight": 7,
-        "max_depth": 4,
-        "learning_rate": 0.01,
-        "gamma": 0.3,
-        "colsample_bytree": 0.5
     }
     with open("../../models/control_xgb_best_params.json", "r") as f:
         control_best_params = json.load(f)
@@ -82,16 +61,12 @@ if __name__ == "__main__":
         X_valid_control, X_valid_treatment, y_valid_control, y_valid_treatment = split_control_treatment(
             test_data, test_target, test_data_is_treatment
         )
-    
-        if args.model == "xgb":
-            clf_control = xgb.XGBClassifier(objective="binary:logistic", **control_best_params)\
-                .fit(X_train_control, y_train_control)
-            clf_treatment = xgb.XGBClassifier(objective="binary:logistic", **treatment_best_params)\
-                .fit(X_train_treatment, y_train_treatment)
-        else:
-            clf_control = models[args.model].fit(X_train_control, y_train_control)
-            clf_treatment = models[args.model].fit(X_train_treatment, y_train_treatment)
-    
+
+        clf_control = xgb.XGBClassifier(objective="binary:logistic", **control_best_params)\
+            .fit(X_train_control, y_train_control)
+        clf_treatment = xgb.XGBClassifier(objective="binary:logistic", **treatment_best_params)\
+            .fit(X_train_treatment, y_train_treatment)
+
         treatment_proba = clf_treatment.predict_proba(test_data)[:, 1]
         control_proba = clf_control.predict_proba(test_data)[:, 1]
         uplift_prediction = treatment_proba - control_proba
@@ -105,7 +80,7 @@ if __name__ == "__main__":
     
         folder = Path(f"../../models/two_models/folds/{dt}")
         folder.mkdir(parents=True, exist_ok=True)
-        model_name = args.model + f"_fold_{i}"
+        model_name = "xgb" + f"_fold_{i}"
         joblib.dump(clf_control, (folder / Path(model_name + "_control.pkl")).resolve())
         joblib.dump(clf_treatment, (folder / Path(model_name + "_treatment.pkl")).resolve())
     
@@ -120,8 +95,8 @@ if __name__ == "__main__":
             X_train, y_train, train_is_treatment
         )
 
-        clf_control = xgb.XGBClassifier(objective="binary:logistic", **xgb_best_params).fit(X_train, y_train)
-        clf_treatment = xgb.XGBClassifier(objective="binary:logistic", **xgb_best_params).fit(X_train, y_train)
+        clf_control = xgb.XGBClassifier(objective="binary:logistic", **control_best_params).fit(X_train, y_train)
+        clf_treatment = xgb.XGBClassifier(objective="binary:logistic", **treatment_best_params).fit(X_train, y_train)
 
         treatment_proba = clf_treatment.predict_proba(X_test)[:, 1]
         control_proba = clf_control.predict_proba(X_test)[:, 1]
