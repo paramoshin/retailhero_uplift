@@ -26,8 +26,15 @@ if __name__ == "__main__":
 
     X_train, y_train, train_is_treatment, X_valid, y_valid, valid_is_treatment, X_test = read_train_test()
     X_train, y_train = join_train_validation(X_train, X_valid, y_train, y_valid)
+    print(X_train.shape)
     train_is_treatment = pd.concat([train_is_treatment, valid_is_treatment], ignore_index=False)
     folds = pd.read_csv("../../data/processed/folds.csv", index_col="client_id")
+
+    level_1 = pd.read_csv("../../data/processed/level_1.csv", index_col="client_id").drop(["Unnamed: 0"], axis=1)
+    print(level_1.shape)
+    # X_train = X_train.join(level_1)
+    print(X_train.shape)
+
     dt = datetime.now().strftime("%Y-%m-%d-%H-%M")
 
     metrics = {
