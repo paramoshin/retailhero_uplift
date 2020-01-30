@@ -8,10 +8,10 @@ from lightgbm import LGBMClassifier
 
 models = {
     "xgb": XGBClassifier(),
-    "randomforest": ensemble.RandomForestClassifier(n_estimators=100),
-    "extratrees": ensemble.ExtraTreesClassifier(n_estimators=100),
+    "randomforest": ensemble.RandomForestClassifier(n_estimators=200),
+    "extratrees": ensemble.ExtraTreesClassifier(n_estimators=200),
     "lightgbm": LGBMClassifier(),
     "logreg": LogisticRegression(),
     "knn": KNeighborsClassifier(),
-    "gradientboosting": ensemble.GradientBoostingClassifier(n_estimators=100),
+    "gradientboosting": ensemble.GradientBoostingClassifier(n_estimators=200),
 }
