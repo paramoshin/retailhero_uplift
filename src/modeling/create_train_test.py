@@ -19,6 +19,7 @@ def encode_clients_features(df):
         df[f"gender_{v}"] = (df["gender"] == v)
         df[f"gender_{v}"] = df[f"gender_{v}"].astype(int)
     df.drop("gender", axis=1, inplace=True)
+
     df['first_redeem_date'] = pd.to_datetime(df['first_redeem_date'])
     df['first_issue_date'] = pd.to_datetime(df['first_issue_date'])
     df['redeem_issue_diff'] = (df['first_redeem_date'] - df['first_issue_date']).dt.total_seconds()
@@ -31,10 +32,20 @@ def encode_clients_features(df):
     df['first_issue_weekofyear'] = df['first_issue_date'].dt.weekofyear
     df['first_issue_week'] = df['first_issue_date'].dt.week
     df['first_issue_quarter'] = df['first_issue_date'].dt.quarter
+
+    df['first_redeem_dayofyear'] = df['first_redeem_date'].dt.dayofyear
+    df['first_redeem_hour'] = df['first_redeem_date'].dt.hour
+    df['first_redeem_weekday'] = df['first_redeem_date'].dt.weekday
+    df['first_redeem_dayofmonth'] = df['first_redeem_date'].dt.day
+    df['first_redeem_year'] = df['first_redeem_date'].dt.year
+    df['first_redeem_month'] = df['first_redeem_date'].dt.month
+    df['first_redeem_weekofyear'] = df['first_redeem_date'].dt.weekofyear
+    df['first_redeem_week'] = df['first_redeem_date'].dt.week
+    df['first_redeem_quarter'] = df['first_redeem_date'].dt.quarter
+
     df['first_issue_date'] = df['first_issue_date'].astype(int) / 10 ** 9
     df['first_redeem_date'] = df['first_redeem_date'].astype(int) / 10 ** 9
     df['diff'] = df['first_redeem_date'] - df['first_issue_date']
-    df.drop(['first_redeem_date', 'first_issue_date'], axis=1, inplace=True)
     return df
 
 
