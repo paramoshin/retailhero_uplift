@@ -20,6 +20,8 @@ def encode_clients_features(df):
         df[f"gender_{v}"] = df[f"gender_{v}"].astype(int)
     df.drop("gender", axis=1, inplace=True)
 
+    df["had_redeem"] = df['first_redeem_date'].isna().astype(int)
+
     df['first_redeem_date'] = pd.to_datetime(df['first_redeem_date'])
     df['first_issue_date'] = pd.to_datetime(df['first_issue_date'])
     df['redeem_issue_diff'] = (df['first_redeem_date'] - df['first_issue_date']).dt.total_seconds()

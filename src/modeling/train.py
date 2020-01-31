@@ -14,6 +14,7 @@ from sklearn.metrics import roc_auc_score
 from sklearn.preprocessing import StandardScaler
 from sklearn.base import clone
 from matplotlib import pyplot as plt
+from mlflow import log_metric, log_param, log_artifact
 
 from src.modeling.utils import *
 from src.modeling.models import models
@@ -23,30 +24,36 @@ from src.modeling.models import models
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', type=str, default="xgb")
-    parser.add_argument('--refit', type=bool, default=False)
+    parser.add_argument("--model", type=str, default="xgb")
+    parser.add_argument("--recency", type=bool, default=False)
+    parser.add_argument("--frequency", type=bool, default=False)
+    parser.add_argument("--level_1", type=bool, default=False)
+    parser.add_argument("--refit", type=bool, default=False)
     parser.add_argument("--use_best", type=bool, default=False)
 
     args = parser.parse_args()
 
+    log_param("model", args.model)
+    log_param("recency", args.recency)
+    log_param("frequency", args.frequency)
+    log_param("level_1", args.level_1)
+    log_param("refit", args.refit)
+    log_param("use_best", args.use_best)
+
     X_train, y_train, train_is_treatment, X_valid, y_valid, valid_is_treatment, X_test = read_train_test()
     X_train, y_train = join_train_validation(X_train, X_valid, y_train, y_valid)
-    print(X_train.shape)
     train_is_treatment = pd.concat([train_is_treatment, valid_is_treatment], ignore_index=False)
     folds = pd.read_csv("../../data/processed/folds.csv", index_col="client_id")
 
-    # frames = []
-    # fs = Path("../../data/processed/").glob("segment_chunk_*.csv")
-    # for f in fs:
-    #     frames.append(pd.read_csv(f).drop(["Unnamed: 0"], axis=1))
-    # segments = pd.concat(frames, ignore_index=True).drop_duplicates(subset="client_id", keep="first").set_index("client_id")
-    # X_train = X_train.join(segments)
-    # print(X_train.shape)
-
-    # level_1 = pd.read_csv("../../data/processed/level_1.csv", index_col="client_id").drop(["Unnamed: 0"], axis=1)
-    # print(level_1.shape)
-    # X_train = X_train.join(level_1)
-    # print(X_train.shape)
+    if args.recency:
+        recency = pd.read_csv("../../data/processed/recency.csv", index_col="client_id")
+        X_train = X_train.join(recency)
+    if args.frequency:
+        frequency = pd.read_csv("../../data/processed/frequency.csv", index_col="client_id")
+        X_train = X_train.join(frequency)
+    if args.level_1:
+        level_1 = pd.read_csv("../../data/processed/level_1.csv", index_col="client_id").drop(["Unnamed: 0"], axis=1)
+        X_train = X_train.join(level_1)
 
     dt = datetime.now().strftime("%Y-%m-%d-%H-%M")
 
@@ -59,11 +66,13 @@ if __name__ == "__main__":
     }
     control_best_params = {}
     treatment_best_params = {}
+
     if args.model == "xgb" and args.use_best:
         with open("../../models/control_xgb_best_params.json", "r") as f:
             control_best_params = json.load(f)
         with open("../../models/treatment_xgb_best_params.json", "r") as f:
             treatment_best_params = json.load(f)
+
     if args.model != "xgb":
         X_train.fillna(-999999, inplace=True)
         X_test.fillna(-999999, inplace=True)
@@ -101,21 +110,42 @@ if __name__ == "__main__":
         control_proba = clf_control.predict_proba(test_data)[:, 1]
         uplift_prediction = treatment_proba - control_proba
         up_score = uplift_score(uplift_prediction, test_target, test_data_is_treatment)
-    
-        metrics["control_acc"].append(clf_control.score(test_data, test_target))
-        metrics["treatment_acc"].append(clf_treatment.score(test_data, test_target))
-        metrics["control_auc"].append(roc_auc_score(test_target, control_proba))
-        metrics["treatment_auc"].append(roc_auc_score(test_target, treatment_proba))
-        metrics["uplift"].append(up_score)
+        
+        control_acc = clf_control.score(test_data, test_target)
+        treatment_acc = clf_treatment.score(test_data, test_target)
+        control_auc = roc_auc_score(test_target, control_proba)
+        treatment_auc = roc_auc_score(test_target, treatment_proba)
+        uplift = up_score
+
+        log_metric("control-acc", control_acc)
+        log_metric("treatment-acc", treatment_acc)
+        log_metric("control-auc", control_auc)
+        log_metric("treatment-auc", treatment_auc)
+        log_metric("uplift", uplift)
+
+        metrics["control_acc"].append(control_acc)
+        metrics["treatment_acc"].append(treatment_acc)
+        metrics["control_auc"].append(control_auc)
+        metrics["treatment_auc"].append(treatment_auc)
+        metrics["uplift"].append(uplift)
     
         folder = Path(f"../../models/two_models/folds/{dt}")
         folder.mkdir(parents=True, exist_ok=True)
         model_name = args.model + f"_fold_{i}"
         joblib.dump(clf_control, (folder / Path(model_name + "_control.pkl")).resolve())
         joblib.dump(clf_treatment, (folder / Path(model_name + "_treatment.pkl")).resolve())
+
+        log_artifact((folder / Path(model_name + "_control.pkl")).resolve(), f"control-clf-fold-{i}")
+        log_artifact((folder / Path(model_name + "_treatment.pkl")).resolve(), f"treatment-clf-fold-{i}")
     
-    print(metrics)
-    print(dict(zip(metrics.keys(), list(map(np.mean, metrics.values())))))
+    log_param("clf-control-params", clf_control.get_params())
+    log_param("clf-treatment-params", clf_treatment.get_params())
+
+    # print(metrics)
+    avg_metrics = dict(zip(metrics.keys(), list(map(np.mean, metrics.values()))))
+    # print(avg_metrics)
+    for k, v in avg_metrics.items():
+        log_metric("average-" + k, v)
 
     if args.refit and args.model == "xgb":
         X_train, y_train, train_is_treatment, X_valid, y_valid, valid_is_treatment, X_test = read_train_test()
@@ -135,6 +165,11 @@ if __name__ == "__main__":
         xgb.plot_importance(clf_treatment, ax=ax)
         plt.savefig("../../data/xgb_treatment_feature_importance.png", max_num_features=30)
 
+        joblib.dump(clf_control, Path(f"../../models/two_models/{args.model}_refit_control.pkl").resolve())
+        joblib.dump(clf_treatment, Path(f"../../models/two_models/{args.model}_refit_treatment.pkl").resolve())
+        log_artifact(Path(f"../../models/two_models/refit_control.pkl").resolve(), f"control-clf-fold-{i}")
+        log_artifact(Path(f"../../models/two_models/refit_treatment.pkl").resolve(), f"treatment-clf-fold-{i}")
+
         treatment_proba = clf_treatment.predict_proba(X_test)[:, 1]
         control_proba = clf_control.predict_proba(X_test)[:, 1]
         uplift_prediction = treatment_proba - control_proba
@@ -142,4 +177,5 @@ if __name__ == "__main__":
         df_submission = pd.DataFrame({'uplift': uplift_prediction}, index=X_test.index)
         submission_folder = Path(f"../../data/submissions/two_models/refit/")
         submission_folder.mkdir(parents=True, exist_ok=True)
-        df_submission.to_csv(f'{submission_folder}/submission_{dt}.csv')
+        df_submission.to_csv(f"{submission_folder}/submission_{dt}.csv")
+        log_artifact(f"{submission_folder}/submission_{dt}.csv", "submission")
