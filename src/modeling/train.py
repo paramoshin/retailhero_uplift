@@ -19,8 +19,13 @@ from mlflow import log_metric, log_param, log_artifact
 from src.modeling.utils import *
 from src.modeling.models import models
 
-# base = 0.06194161210184176
-# level_1 = 0.05986179660873131
+# 01.02 no best_params:
+#   - recency - 0,0420
+#   - frequency - 0,0420
+#   - level_1 - 0,0420
+#   - recency, frequency - 0,0420
+#   - recency, frequency, level_1 - 0,0420
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -161,14 +166,16 @@ if __name__ == "__main__":
         fig, ax = plt.subplots(figsize=(20, 16))
         xgb.plot_importance(clf_control, ax=ax)
         plt.savefig("../../data/xgb_control_feature_importance.png", max_num_features=30)
+        log_artifact("../../data/xgb_control_feature_importance.png", "contol-feature-importance")
         fig, ax = plt.subplots(figsize=(20, 16))
         xgb.plot_importance(clf_treatment, ax=ax)
         plt.savefig("../../data/xgb_treatment_feature_importance.png", max_num_features=30)
+        log_artifact("../../data/xgb_treatment_feature_importance.png", "treatment-feature-importance")
 
         joblib.dump(clf_control, Path(f"../../models/two_models/{args.model}_refit_control.pkl").resolve())
         joblib.dump(clf_treatment, Path(f"../../models/two_models/{args.model}_refit_treatment.pkl").resolve())
-        log_artifact(Path(f"../../models/two_models/refit_control.pkl").resolve(), f"control-clf-fold-{i}")
-        log_artifact(Path(f"../../models/two_models/refit_treatment.pkl").resolve(), f"treatment-clf-fold-{i}")
+        log_artifact(Path(f"../../models/two_models/{args.model}_refit_control.pkl").resolve(), f"control-clf-fold-{i}")
+        log_artifact(Path(f"../../models/two_models/{args.model}_refit_treatment.pkl").resolve(), f"treatment-clf-fold-{i}")
 
         treatment_proba = clf_treatment.predict_proba(X_test)[:, 1]
         control_proba = clf_control.predict_proba(X_test)[:, 1]
