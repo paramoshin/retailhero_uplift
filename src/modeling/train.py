@@ -20,9 +20,9 @@ from src.modeling.utils import *
 from src.modeling.models import models
 
 # 01.02 no best_params:
-#   - recency - 0,0420
-#   - frequency - 0,0420
-#   - level_1 - 0,0420
+#   - level_1 - 0,09
+#   - recency - 0,09
+#   - frequency - 0,09
 #   - recency, frequency - 0,0420
 #   - recency, frequency, level_1 - 0,0420
 
@@ -152,7 +152,7 @@ if __name__ == "__main__":
     for k, v in avg_metrics.items():
         log_metric("average-" + k, v)
 
-    if args.refit and args.model == "xgb":
+    if args.refit:
         X_train, y_train, train_is_treatment, X_valid, y_valid, valid_is_treatment, X_test = read_train_test()
         X_train, y_train = join_train_validation(X_train, X_valid, y_train, y_valid)
         train_is_treatment = pd.concat([train_is_treatment, valid_is_treatment], ignore_index=False)
@@ -160,8 +160,11 @@ if __name__ == "__main__":
             X_train, y_train, train_is_treatment
         )
 
-        clf_control = xgb.XGBClassifier(objective="binary:logistic", **control_best_params).fit(X_train, y_train)
-        clf_treatment = xgb.XGBClassifier(objective="binary:logistic", **treatment_best_params).fit(X_train, y_train)
+        if args.model == "xgb":
+            clf_control = xgb.XGBClassifier(objective="binary:logistic", **control_best_params)\
+                .fit(X_train_control, y_train_control)
+            clf_treatment = xgb.XGBClassifier(objective="binary:logistic", **treatment_best_params)\
+                .fit(X_train_treatment, y_train_treatment)
 
         fig, ax = plt.subplots(figsize=(20, 16))
         xgb.plot_importance(clf_control, ax=ax)

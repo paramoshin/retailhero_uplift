@@ -24,7 +24,7 @@ if __name__ == "__main__":
             frame = pd.read_csv("../../notebooks/purchases_level_2.csv", skiprows=[i for i in range(1, skip + 1)], nrows=c[0])
             data = (
                 frame.groupby("client_id")[
-                    [x for x in frame.columns if x.startswith("level_") or x.startswith("segment_id_")]
+                    [x for x in frame.columns if x.startswith("level_")]
                 ].sum()
                 .reset_index()
                 .groupby("client_id")
@@ -47,7 +47,7 @@ if __name__ == "__main__":
             frame = pd.read_csv("../../notebooks/purchases_segment.csv", skiprows=[i for i in range(1, skip + 1)], nrows=c[0])
             data = (
                 frame.groupby("client_id")[
-                    [x for x in frame.columns if x.startswith("level_") or x.startswith("segment_id_")]
+                    [x for x in frame.columns if x.startswith("segment_id_")]
                 ].sum()
                 .reset_index()
                 .groupby("client_id")
