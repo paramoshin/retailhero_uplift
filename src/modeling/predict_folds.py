@@ -7,6 +7,7 @@ sys.path.extend([p])
 
 import pandas as pd
 import joblib
+from mlflow import log_param, log_artifact
 
 from src.modeling.utils import *
 
@@ -15,6 +16,8 @@ if __name__ == "__main__":
     parser.add_argument("--dt", type=str, default=None)
     parser.add_argument("--to_average", type=str, default="uplift")
     args = parser.parse_args()
+
+    log_param("model-dt", args.dt)
 
     dt = datetime.now().strftime("%Y-%m-%d-%H-%M")
 
@@ -50,17 +53,18 @@ if __name__ == "__main__":
             else:
                 treatment_preds += treatment_proba
                 control_preds += control_proba
+                
     if args.to_average == "uplift":
         preds /= 5
         df_submission = pd.DataFrame({'uplift': preds}, index=X_test.index)
-        submission_folder = Path(f"../../data/submissions/folds")
-        submission_folder.mkdir(parents=True, exist_ok=True)
-        df_submission.to_csv(f'{submission_folder}/submission_{dt}.csv')
     else:
         treatment_preds /= 5
         control_preds /= 5
         uplift_prediction = treatment_preds - control_preds
         df_submission = pd.DataFrame({'uplift': uplift_prediction}, index=X_test.index)
-        submission_folder = Path(f"../../data/submissions/folds")
-        submission_folder.mkdir(parents=True, exist_ok=True)
-        df_submission.to_csv(f'{submission_folder}/submission_{dt}.csv')
+
+    submission_folder = Path(f"../../data/submissions/folds")
+    submission_folder.mkdir(parents=True, exist_ok=True)
+    df_submission.to_csv(f'{submission_folder}/submission_{dt}.csv')
+    log_artifact(f'{submission_folder}/submission_{dt}.csv', "submission")
+
