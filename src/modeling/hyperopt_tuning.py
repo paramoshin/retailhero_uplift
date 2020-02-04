@@ -71,7 +71,7 @@ if __name__ == "__main__":
     # Optimize control:
     trials = Trials()
     best = fmin(
-        fn=partial(objective, X_train=X_train_control, y_train=y_train_control,
+        fn=partial(objective, X_train=X_train_control, y_train=y_train_control),
         space=space,
         algo=tpe.suggest,
         max_evals=100,
@@ -93,7 +93,7 @@ if __name__ == "__main__":
     # Optimize treatment:
     trials = Trials()
     best = fmin(
-        fn=partial(objective, X_train=X_train_treatment, y_train=y_train_treatment,
+        fn=partial(objective, X_train=X_train_treatment, y_train=y_train_treatment),
         space=space,
         algo=tpe.suggest,
         max_evals=100,
