@@ -13,6 +13,7 @@ import joblib
 from sklearn.metrics import roc_auc_score
 from sklearn.preprocessing import StandardScaler
 from sklearn.base import clone
+from sklearn.linear_model import LogisticRegression
 from matplotlib import pyplot as plt
 from mlflow import log_metric, log_param, log_artifact
 
@@ -37,6 +38,7 @@ if __name__ == "__main__":
     parser.add_argument("--level_1", type=bool, default=False)
     parser.add_argument("--refit", type=bool, default=False)
     parser.add_argument("--use_best", type=bool, default=False)
+    parser.add_argument("--platts_scaling", type=bool, default=False)
 
     args = parser.parse_args()
 
@@ -107,7 +109,7 @@ if __name__ == "__main__":
             test_data, test_target, test_data_is_treatment
         )
 
-        if args.model == "xgb":
+        if args.model == "xgb" and args.use_best:
             clf_control = xgb.XGBClassifier(objective="binary:logistic", **control_best_params)\
                 .fit(X_train_control, y_train_control)
             clf_treatment = xgb.XGBClassifier(objective="binary:logistic", **treatment_best_params)\

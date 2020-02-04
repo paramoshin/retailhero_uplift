@@ -7,11 +7,11 @@ from xgboost import XGBClassifier
 from lightgbm import LGBMClassifier
 
 models = {
-    "xgb": XGBClassifier(),
-    "randomforest": ensemble.RandomForestClassifier(n_estimators=200),
-    "extratrees": ensemble.ExtraTreesClassifier(n_estimators=200),
+    "xgb": XGBClassifier(objective="binary:logistic", n_estimators=200, random_state=42, n_jobs=-1),
+    "randomforest": ensemble.RandomForestClassifier(n_estimators=200, random_state=42, n_jobs=-1),
+    "extratrees": ensemble.ExtraTreesClassifier(n_estimators=200, random_state=42, n_jobs=-1),
     "lightgbm": LGBMClassifier(),
     "logreg": LogisticRegression(),
     "knn": KNeighborsClassifier(),
-    "gradientboosting": ensemble.GradientBoostingClassifier(n_estimators=200),
+    "gradientboosting": ensemble.GradientBoostingClassifier(n_estimators=200, random_state=42),
 }
