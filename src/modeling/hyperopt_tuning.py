@@ -29,7 +29,7 @@ def objective(space, X_train, y_train):
     )
     classifier.fit(X_train, y_train)
     # Applying k-Fold Cross Validation
-    logloss = cross_val_score(estimator=classifier, X=X_train, y=y_train, cv=10, scoring="log_loss")
+    logloss = cross_val_score(estimator=classifier, X=X_train, y=y_train, cv=10, scoring="neg_log_loss")
     cross_val_mean = logloss.mean()
     print("CrossValMean:", cross_val_mean)
     return {"loss": 1 - cross_val_mean, "status": STATUS_OK}
