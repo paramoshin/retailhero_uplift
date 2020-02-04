@@ -29,7 +29,7 @@ def objective(space, X_train, y_train):
     )
     classifier.fit(X_train, y_train)
     # Applying k-Fold Cross Validation
-    logloss = cross_val_score(estimator=classifier, X=X_train, y=y_train, cv=10, scoring="neg_log_loss")
+    logloss = cross_val_score(estimator=classifier, X=X_train, y=y_train, cv=10, scoring="log_loss")
     cross_val_mean = logloss.mean()
     print("CrossValMean:", cross_val_mean)
     return {"loss": 1 - cross_val_mean, "status": STATUS_OK}
@@ -71,14 +71,14 @@ if __name__ == "__main__":
         "reg_alpha" : hp.quniform("reg_alpha", 40,180,1),
         "reg_lambda" : hp.uniform("reg_lambda", 0,1),
     }
-
+    
     # Optimize control:
     trials = Trials()
     best = fmin(
         fn=partial(objective, X_train=X_train_control, y_train=y_train_control),
         space=space,
         algo=tpe.suggest,
-        max_evals=100,
+        max_evals=50,
         trials=trials
     )
     print(f"Control best params: {best}")
@@ -100,7 +100,7 @@ if __name__ == "__main__":
         fn=partial(objective, X_train=X_train_treatment, y_train=y_train_treatment),
         space=space,
         algo=tpe.suggest,
-        max_evals=100,
+        max_evals=50,
         trials=trials
     )
     print(f"Treatment best params: {best}")
