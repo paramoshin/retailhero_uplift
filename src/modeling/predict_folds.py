@@ -14,10 +14,17 @@ from src.modeling.utils import *
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--dt", type=str, default=None)
+    parser.add_argument("--recency", type=bool, default=False)
+    parser.add_argument("--frequency", type=bool, default=False)
+    parser.add_argument("--level_1", type=bool, default=False)
     parser.add_argument("--to_average", type=str, default="uplift")
     args = parser.parse_args()
 
     log_param("model-dt", args.dt)
+    log_param("to-avreage", args.to_average)
+    log_param("recency", args.recency)
+    log_param("frequency", args.frequency)
+    log_param("level_1", args.level_1)
 
     dt = datetime.now().strftime("%Y-%m-%d-%H-%M")
 
@@ -26,13 +33,27 @@ if __name__ == "__main__":
     train_is_treatment = pd.concat([train_is_treatment, valid_is_treatment], ignore_index=False)
     folds = pd.read_csv("../../data/processed/folds.csv", index_col="client_id")
 
+    if args.recency:
+        recency = pd.read_csv("../../data/processed/recency.csv", index_col="client_id")
+        X_train = X_train.join(recency)
+        X_test = X_test.join(recency)
+    if args.frequency:
+        frequency = pd.read_csv("../../data/processed/frequency.csv", index_col="client_id")
+        X_train = X_train.join(frequency)
+        X_test = X_test.join(frequency)
+    if args.level_1:
+        level_1 = pd.read_csv("../../data/processed/level_1.csv", index_col="client_id").drop(["Unnamed: 0"], axis=1)
+        X_train = X_train.join(level_1)
+        X_test = X_test.join(level_1)
+
+
     for i in range(5):
         print(f"Fold {i + 1}")
         if not args.dt:
             folders = list(Path(f"../../models/two_models/folds/").glob("*"))
             folder = sorted(folders)[-1]
         else:
-            folder = Path(f"../../models/two_models/folds/{dt}")
+            folder = Path(f"../../models/two_models/folds/{args.dt}/")
         control_path = list(folder.glob(f"*_{i}_control.pkl"))[0]
         treatment_path = list(folder.glob(f"*_{i}_treatment.pkl"))[0]
         clf_control = joblib.load(control_path)
@@ -53,7 +74,7 @@ if __name__ == "__main__":
             else:
                 treatment_preds += treatment_proba
                 control_preds += control_proba
-                
+
     if args.to_average == "uplift":
         preds /= 5
         df_submission = pd.DataFrame({'uplift': preds}, index=X_test.index)
