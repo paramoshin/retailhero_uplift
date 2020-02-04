@@ -6,6 +6,7 @@ from pathlib import Path
 p = str(Path(".").resolve().parent.parent)
 sys.path.extend([p])
 
+import pandas as pd
 import numpy as np
 import xgboost as xgb
 from sklearn.model_selection import cross_val_score
