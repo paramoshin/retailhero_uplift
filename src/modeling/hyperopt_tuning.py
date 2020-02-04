@@ -66,7 +66,6 @@ if __name__ == "__main__":
         "colsample_bytree" : hp.quniform("colsample_bytree", 0.1, 1.0, 0.01),
         "reg_alpha" : hp.quniform("reg_alpha", 40,180,1),
         "reg_lambda" : hp.uniform("reg_lambda", 0,1),
-
     }
 
     # Optimize control:
@@ -79,18 +78,27 @@ if __name__ == "__main__":
         trials=trials
     )
     print(f"Control best params: {best}")
-    with open("../../data/models/hyperopt_control_best_params.json", "w") as f:
+
+    p = "../../data/models/hyperopt_"
+    if args.recency:
+        p += "_recency"
+    if args.frequency:
+        p += "_frequency"
+    if args.level_1:
+        p += "_level_1"
+
+    with open (p + "_control.json", "w") as f:
         json.dump(best, f)
 
     # Optimize treatment:
     trials = Trials()
     best = fmin(
-        fn=partial(objective, X_train=X_train_control, y_train=y_train_control,
+        fn=partial(objective, X_train=X_train_treatment, y_train=y_train_treatment,
         space=space,
         algo=tpe.suggest,
         max_evals=100,
         trials=trials
     )
     print(f"Treatment best params: {best}")
-    with open("../../data/models/hyperopt_treatment_best_params.json", "w") as f:
+    with open(p + "_treatment.json", "w") as f:
         json.dump(best, f)
