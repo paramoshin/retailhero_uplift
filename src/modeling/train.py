@@ -20,11 +20,13 @@ from src.modeling.utils import *
 from src.modeling.models import models
 
 # 01.02 no best_params:
-#   - level_1 - 0,09
-#   - recency - 0,09
-#   - frequency - 0,09
-#   - recency, frequency - 0,0420
-#   - recency, frequency, level_1 - 0,0420
+#   - base - 0,0900
+#   - level_1 - 0,0830
+#   - recency - 0,0774
+#   - frequency - 0,0869
+#   - recency, frequency - 0,0821
+#   - recency, frequency, level_1 - 0,0752
+#   - base, log_reg transformation - 
 
 
 if __name__ == "__main__":
@@ -53,12 +55,15 @@ if __name__ == "__main__":
     if args.recency:
         recency = pd.read_csv("../../data/processed/recency.csv", index_col="client_id")
         X_train = X_train.join(recency)
+        X_test = X_test.join(recency)
     if args.frequency:
         frequency = pd.read_csv("../../data/processed/frequency.csv", index_col="client_id")
         X_train = X_train.join(frequency)
+        X_test = X_test.join(frequency)
     if args.level_1:
         level_1 = pd.read_csv("../../data/processed/level_1.csv", index_col="client_id").drop(["Unnamed: 0"], axis=1)
         X_train = X_train.join(level_1)
+        X_test = X_test.join(level_1)
 
     dt = datetime.now().strftime("%Y-%m-%d-%H-%M")
 
@@ -153,9 +158,6 @@ if __name__ == "__main__":
         log_metric("average-" + k, v)
 
     if args.refit:
-        X_train, y_train, train_is_treatment, X_valid, y_valid, valid_is_treatment, X_test = read_train_test()
-        X_train, y_train = join_train_validation(X_train, X_valid, y_train, y_valid)
-        train_is_treatment = pd.concat([train_is_treatment, valid_is_treatment], ignore_index=False)
         X_train_control, X_train_treatment, y_train_control, y_train_treatment = split_control_treatment(
             X_train, y_train, train_is_treatment
         )
@@ -166,14 +168,12 @@ if __name__ == "__main__":
             clf_treatment = xgb.XGBClassifier(objective="binary:logistic", **treatment_best_params)\
                 .fit(X_train_treatment, y_train_treatment)
 
-        fig, ax = plt.subplots(figsize=(20, 16))
-        xgb.plot_importance(clf_control, ax=ax)
-        plt.savefig("../../data/xgb_control_feature_importance.png", max_num_features=30)
-        log_artifact("../../data/xgb_control_feature_importance.png", "contol-feature-importance")
-        fig, ax = plt.subplots(figsize=(20, 16))
-        xgb.plot_importance(clf_treatment, ax=ax)
-        plt.savefig("../../data/xgb_treatment_feature_importance.png", max_num_features=30)
-        log_artifact("../../data/xgb_treatment_feature_importance.png", "treatment-feature-importance")
+        # with open("../../data/xgb_control_feature_importance.json", "w") as f:
+        #     json.dump(clf_control.get_fscore(importance_type='gain'))
+        # log_artifact("../../data/xgb_control_feature_importance.png", "contol-feature-importance-gain")
+        # with open("../../data/xgb_treatment_feature_importance.json ", "w") as f:
+        #     json.dump(clf_treatment.get_fscore(importance_type='gain'))
+        # log_artifact("../../data/xgb_control_feature_importance.png", "contol-feature-importance-gain")
 
         joblib.dump(clf_control, Path(f"../../models/two_models/{args.model}_refit_control.pkl").resolve())
         joblib.dump(clf_treatment, Path(f"../../models/two_models/{args.model}_refit_treatment.pkl").resolve())
