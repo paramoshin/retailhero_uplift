@@ -27,6 +27,7 @@ def objective(space, X_train, y_train):
         n_jobs=-1,
         random_state=42
     )
+    print(f"fitting with params: {classifier.get_params()}")
     classifier.fit(X_train, y_train)
     # Applying k-Fold Cross Validation
     logloss = cross_val_score(estimator=classifier, X=X_train, y=y_train, cv=10, scoring="neg_log_loss")
