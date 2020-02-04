@@ -16,7 +16,6 @@ from src.modeling.utils import *
 
 
 def objective(space, X_train, y_train):
-    warnings.filterwarnings(action="ignore", category=DeprecationWarning)
     classifier = xgb.XGBClassifier(
         n_estimators = space["n_estimators"],
         max_depth = int(space["max_depth"]),
