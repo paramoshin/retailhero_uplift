@@ -1,6 +1,10 @@
 import argparse
 import json
 from functools import partial
+import sys
+from pathlib import Path
+p = str(Path(".").resolve().parent.parent)
+sys.path.extend([p])
 
 import numpy as np
 import xgboost as xgb
