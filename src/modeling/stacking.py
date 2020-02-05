@@ -51,28 +51,19 @@ def get_cv_score(model, folds, X_train, y_train, train_is_treatment):
         X_train_control, X_train_treatment, y_train_control, y_train_treatment = split_control_treatment(
             train_data, train_target, train_data_is_treatment
         )
-        X_valid_control, X_valid_treatment, y_valid_control, y_valid_treatment = split_control_treatment(
-            test_data, test_target, test_data_is_treatment
-        )
         clf_control = model.fit(X_train_control, y_train_control)
         clf_treatment = model.fit(X_train_treatment, y_train_treatment)
 
         treatment_proba = clf_treatment.predict_proba(test_data)[:, 1]
         control_proba = clf_control.predict_proba(test_data)[:, 1]
         uplift_prediction = treatment_proba - control_proba
-        up_score = uplift_score(uplift_prediction, test_target, test_data_is_treatment)
+        up_score = uplift_score(uplift_prediction, test_data_is_treatment, test_target)
         
         control_acc.append(clf_control.score(test_data, test_target))
         treatment_acc.append(clf_treatment.score(test_data, test_target))
         control_auc.append(roc_auc_score(test_target, control_proba))
         treatment_auc.append(roc_auc_score(test_target, treatment_proba))
         uplift.append(up_score)
-
-    print(f"control_acc: {control_acc}")
-    print(f"treatment_acc: {treatment_acc}")
-    print(f"control_auc: {control_auc}")
-    print(f"treatment_auc: {treatment_auc}")
-    print(f"uplift: {uplift}")
 
     print(f"Average control_acc: {np.mean(control_acc)}")
     print(f"Average treatment_acc: {np.mean(treatment_acc)}")
@@ -96,12 +87,10 @@ if __name__ == "__main__":
 
     # 1 -> xgb, base
     # 2 -> xgb, base + last_month
-    # 3 -> xgb, last_month + recency + frequency
-    # 4 -> xgb, base + recency + frequency
-    # 5 -> xgb, last_month + level_1
-    # 6 -> LogReg, 1, 2, 3, 4, 5
-
-    # 1
+    # 3 -> lightgmb, last_month + recency + frequency
+    # 4 -> lightgmb, base + recency + frequency
+    # 5 -> extratrees, last_month + level_1
+    # 6 -> np.mean, 1, 2, 3, 4, 5
 
     X_train_control, X_train_treatment, y_train_control, y_train_treatment = split_control_treatment(
         X_train, y_train, train_is_treatment
@@ -150,9 +139,10 @@ if __name__ == "__main__":
     ]
     uplift_preds = []
     for i, step in enumerate(steps):
-        print(f"step {i + 1}")
+        print(f"------STEP {i + 1}------")
         get_cv_score(step[0], folds, *join_train_validation(*step[1:5]), train_is_treatment)
         uplift_preds.append(fit_(*step))
+        print("\n")
     uplift_preds = np.array(uplift_preds)
     print(uplift_preds.shape)
     print(pd.DataFrame(uplift_preds).corr())
