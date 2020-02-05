@@ -184,6 +184,17 @@ if __name__ == "__main__":
 
         treatment_proba = clf_treatment.predict_proba(X_test)[:, 1]
         control_proba = clf_control.predict_proba(X_test)[:, 1]
+
+        if args.platts_scaling:
+            lr_control = LogisticRegression().fit(
+                clf_control.predict_proba(X_train_control)[:, 1].reshape(-1, 1), y_train_control
+            )
+            lr_treatment = LogisticRegression().fit(
+                clf_treatment.predict_proba(X_train_treatment)[:, 1].reshape(-1, 1), y_train_treatment
+            )
+            treatment_proba = lr_treatment.predict_proba(treatment_proba.reshape(-1, 1))
+            control_proba = lr_control.predict_proba(control_proba.reshape(-1, 1))
+
         uplift_prediction = treatment_proba - control_proba
 
         df_submission = pd.DataFrame({'uplift': uplift_prediction}, index=X_test.index)

@@ -84,7 +84,7 @@ if __name__ == "__main__":
     )
     print(f"Control best params: {best}")
 
-    p = "../../data/models/hyperopt_"
+    p = "../../models/hyperopt"
     if args.recency:
         p += "_recency"
     if args.frequency:
