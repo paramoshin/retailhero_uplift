@@ -60,7 +60,7 @@ if __name__ == "__main__":
             X_train_control[base_features], 
             X_train_treatment[base_features], 
             y_train_control, 
-            y_train_treatmen,
+            y_train_treatment,
             X_test[base_features]
         ),
         (
