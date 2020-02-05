@@ -97,7 +97,8 @@ if __name__ == "__main__":
         ),
     ]
     uplift_preds = []
-    for step in steps:
+    for i, step in enumerate(steps):
+        print(f"step {i + 1}")
         uplift_preds.append(fit_(*step))
     uplift_preds = np.array(uplift_preds) / 5
     df_submission = pd.DataFrame({'uplift': uplift_prediction}, index=X_test.index)
