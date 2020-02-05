@@ -72,28 +72,28 @@ if __name__ == "__main__":
             X_test
         ),
         (
-            models["xgb"], 
-            X_train_control[last_month_features].join(recency).join(frequency), 
-            X_train_treatment[last_month_features].join(recency).join(frequency), 
+            models["lightgbm"], 
+            X_train_control[last_month_features].join(recency).join(frequency).fillna(-99999), 
+            X_train_treatment[last_month_features].join(recency).join(frequency).fillna(-99999), 
             y_train_control, 
             y_train_treatment,
-            X_test[last_month_features].join(recency).join(frequency)
+            X_test[last_month_features].join(recency).join(frequency).fillna(-99999)
         ),
         (
-            models["xgb"], 
-            X_train_control[base_features].join(recency).join(frequency), 
-            X_train_treatment[base_features].join(recency).join(frequency), 
+            models["lightgbm"], 
+            X_train_control[base_features].join(recency).join(frequency).fillna(-99999), 
+            X_train_treatment[base_features].join(recency).join(frequency).fillna(-99999), 
             y_train_control, 
             y_train_treatment,
-            X_test[base_features].join(recency).join(frequency)
+            X_test[base_features].join(recency).join(frequency).fillna(-99999)
         ),
         (
-            models["xgb"], 
-            X_train_control[last_month_features].join(level_1), 
-            X_train_treatment[last_month_features].join(level_1), 
+            models["extratrees"], 
+            X_train_control[last_month_features].join(level_1).fillna(-99999), 
+            X_train_treatment[last_month_features].join(level_1).fillna(-99999), 
             y_train_control, 
             y_train_treatment,
-            X_test[last_month_features].join(level_1)
+            X_test[last_month_features].join(level_1).fillna(-99999)
         ),
     ]
     uplift_preds = []
