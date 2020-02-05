@@ -151,7 +151,7 @@ if __name__ == "__main__":
     uplift_preds = []
     for i, step in enumerate(steps):
         print(f"step {i + 1}")
-        get_cv_score(step[0], fodls, *join_train_validation(*step[1:5]) train_is_treatment)
+        get_cv_score(step[0], fodls, *join_train_validation(*step[1:5]), train_is_treatment)
         uplift_preds.append(fit_(*step))
     uplift_preds = np.array(uplift_preds)
     print(uplift_preds.shape)
