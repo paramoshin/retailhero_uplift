@@ -29,7 +29,7 @@ def fit_(model, X_train_control, X_train_treatment, y_train_control, y_train_tre
     uplift_prediction = treatment_proba - control_proba
     return uplift_prediction
 
-def get_cv_score(model, fodls, X_train, y_train, train_is_treatment):
+def get_cv_score(model, folds, X_train, y_train, train_is_treatment):
     control_acc = []
     treatment_acc = []
     control_auc = []
@@ -151,7 +151,7 @@ if __name__ == "__main__":
     uplift_preds = []
     for i, step in enumerate(steps):
         print(f"step {i + 1}")
-        get_cv_score(step[0], fodls, *join_train_validation(*step[1:5]), train_is_treatment)
+        get_cv_score(step[0], folds, *join_train_validation(*step[1:5]), train_is_treatment)
         uplift_preds.append(fit_(*step))
     uplift_preds = np.array(uplift_preds)
     print(uplift_preds.shape)
