@@ -134,7 +134,7 @@ if __name__ == "__main__":
                 index=X_train_control.index
             ), 
             pd.DataFrame(
-                scaler.transform(X_train_treatment[base_features])
+                scaler.transform(X_train_treatment[base_features]),
                 columns=base_features,
                 index=X_train_treatment.index
             ), 
