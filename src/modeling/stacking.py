@@ -204,6 +204,7 @@ if __name__ == "__main__":
                 X_test[last_month_features].join(recency).join(frequency).fillna(-99999),
                 columns=last_month_features + recency.columns.tolist() + frequency.columns.tolist(),
                 index=X_test.index
+            )
         ),
         (
             models["knn"], 
