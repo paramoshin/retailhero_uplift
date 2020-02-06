@@ -17,8 +17,8 @@ from sklearn.linear_model import LogisticRegression
 from matplotlib import pyplot as plt
 from mlflow import log_metric, log_param, log_artifact
 
-from src.modeling.utils import *
-from src.modeling.models import models
+from src.utils import *
+from src.models import models
 
 # 01.02 no best_params:
 #   - base - 0,0900
@@ -115,11 +115,11 @@ if __name__ == "__main__":
             clf_treatment = xgb.XGBClassifier(objective="binary:logistic", **treatment_best_params)\
                 .fit(X_train_treatment, y_train_treatment)
         else:
-            clf_control = models[args.model].fit(X_train_control, y_train_control)
-            clf_treatment = models[args.model].fit(X_train_treatment, y_train_treatment)
+            clf_control = clone(models[args.model]).fit(X_train_control, y_train_control)
+            clf_treatment = clone(models[args.model]).fit(X_train_treatment, y_train_treatment)
 
-        treatment_proba = clf_treatment.predict_proba(test_data)[:, 1]
         control_proba = clf_control.predict_proba(test_data)[:, 1]
+        treatment_proba = clf_treatment.predict_proba(test_data)[:, 1]
         uplift_prediction = treatment_proba - control_proba
         up_score = uplift_score(
             prediction=uplift_prediction, treatment=test_data_is_treatment.values, target=test_target.values
@@ -155,14 +155,11 @@ if __name__ == "__main__":
     log_param("clf-control-params", clf_control.get_params())
     log_param("clf-treatment-params", clf_treatment.get_params())
 
-    # print(metrics)
     avg_metrics = dict(zip(metrics.keys(), list(map(np.mean, metrics.values()))))
-    # print(avg_metrics)
     for k, v in avg_metrics.items():
         log_metric("average-" + k, v)
 
     if args.refit:
-        print("refit")
         X_train_control, X_train_treatment, y_train_control, y_train_treatment = split_control_treatment(
             X_train, y_train, train_is_treatment
         )
@@ -173,12 +170,16 @@ if __name__ == "__main__":
             clf_treatment = xgb.XGBClassifier(objective="binary:logistic", **treatment_best_params)\
                 .fit(X_train_treatment, y_train_treatment)
 
-        # with open("../../data/xgb_control_feature_importance.json", "w") as f:
-        #     json.dump(clf_control.get_fscore(importance_type='gain'))
-        # log_artifact("../../data/xgb_control_feature_importance.png", "contol-feature-importance-gain")
-        # with open("../../data/xgb_treatment_feature_importance.json ", "w") as f:
-        #     json.dump(clf_treatment.get_fscore(importance_type='gain'))
-        # log_artifact("../../data/xgb_control_feature_importance.png", "contol-feature-importance-gain")
+        else:
+            clf_control = clone(models[args.model]).fit(X_train_control, y_train_control)
+            clf_treatment = clone(models[args.model]).fit(X_train_treatment, y_train_treatment)
+
+        with open("../../data/xgb_control_feature_importance.json", "w") as f:
+            json.dump(clf_control.get_fscore(importance_type='gain'))
+        log_artifact("../../data/xgb_control_feature_importance.png", "contol-feature-importance-gain")
+        with open("../../data/xgb_treatment_feature_importance.json ", "w") as f:
+            json.dump(clf_treatment.get_fscore(importance_type='gain'))
+        log_artifact("../../data/xgb_control_feature_importance.png", "contol-feature-importance-gain")
 
         joblib.dump(clf_control, Path(f"../../models/two_models/{args.model}_refit_control.pkl").resolve())
         joblib.dump(clf_treatment, Path(f"../../models/two_models/{args.model}_refit_treatment.pkl").resolve())
