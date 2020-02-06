@@ -109,7 +109,7 @@ if __name__ == "__main__":
     scaler = StandardScaler()
     level_1_steps = [
         (
-            models["randomforest"], 
+            clone(models["randomforest"]), 
             pd.DataFrame(
                 X_train_control[base_features].fillna(-99999), 
                 columns=base_features, 
@@ -129,7 +129,7 @@ if __name__ == "__main__":
             )
         ),
         (
-            models["logreg"],
+            clone(models["logreg"]),
             pd.DataFrame(
                 scaler.fit_transform(X_train_control[base_features].fillna(-99999)),
                 columns=base_features,
@@ -149,7 +149,7 @@ if __name__ == "__main__":
             )
         ),
         (
-            models["lightgbm"], 
+            clone(models["lightgbm"]), 
             pd.DataFrame(
                 X_train_control.fillna(-99999),
                 columns=X_train_control.columns,
@@ -169,7 +169,7 @@ if __name__ == "__main__":
             )
         ),
         (
-            models["gradientboosting"], 
+            clone(models["gradientboosting"]), 
             pd.DataFrame(
                 X_train_control.fillna(-99999), 
                 columns=X_train_control.columns,
@@ -189,7 +189,7 @@ if __name__ == "__main__":
             )
         ),
         (
-            models["extratrees"], 
+            clone(models["extratrees"]), 
             pd.DataFrame(
                 X_train_control[last_month_features].join(recency).join(frequency).fillna(-99999), 
                 columns=last_month_features + recency.columns.tolist() + frequency.columns.tolist(),
@@ -209,7 +209,7 @@ if __name__ == "__main__":
             )
         ),
         (
-            models["knn"], 
+            clone(models["knn"]), 
             pd.DataFrame(
                 scaler.fit_transform(
                     X_train_control[last_month_features]
