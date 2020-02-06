@@ -129,19 +129,19 @@ if __name__ == "__main__":
         (
             models["logreg"],
             pd.DataFrame(
-                scaler.fit_transform(X_train_control[base_features]),
+                scaler.fit_transform(X_train_control[base_features].fillna(-99999),
                 columns=base_features,
                 index=X_train_control.index
             ), 
             pd.DataFrame(
-                scaler.transform(X_train_treatment[base_features]),
+                scaler.transform(X_train_treatment[base_features].fillna(-99999),
                 columns=base_features,
                 index=X_train_treatment.index
             ), 
             y_train_control, 
             y_train_treatment, 
             pd.DataFrame(
-                scaler.transform(X_test[base_features]),
+                scaler.transform(X_test[base_features].fillna(-99999),
                 columns=base_features,
                 index=X_test.index
             )
