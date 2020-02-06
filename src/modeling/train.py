@@ -17,8 +17,8 @@ from sklearn.linear_model import LogisticRegression
 from matplotlib import pyplot as plt
 from mlflow import log_metric, log_param, log_artifact
 
-from src.utils import *
-from src.models import models
+from src.modeling.utils import *
+from src.modeling.models import models
 
 # 01.02 no best_params:
 #   - base - 0,0900
