@@ -96,6 +96,10 @@ if __name__ == "__main__":
     if args.level_1:
         p += "_level_1"
 
+    best["max_depth"] = int(best["max_depth"])
+    best["gamma"] = float(best["gamma"])
+    best["colsample_bytree"] = float(best["colsample_bytree"])
+
     with open (p + "_control.json", "w") as f:
         json.dump(best, f)
 
@@ -108,6 +112,11 @@ if __name__ == "__main__":
         max_evals=50,
         trials=trials,
     )
+
+    best["max_depth"] = int(best["max_depth"])
+    best["gamma"] = float(best["gamma"])
+    best["colsample_bytree"] = float(best["colsample_bytree"])
+
     print(f"Treatment best params: {best}")
     with open(p + "_treatment.json", "w") as f:
         json.dump(best, f)
