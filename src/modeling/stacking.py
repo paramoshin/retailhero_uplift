@@ -144,11 +144,8 @@ if __name__ == "__main__":
         uplift_preds.append(fit_(*step))
         print("\n")
     uplift_preds_df = pd.DataFrame({f"step_{i}": uplift_preds[i] for i in range(len(steps))})
-    print(uplift_preds_df.shape)
-    print(uplift_preds_df.head())
     print(uplift_preds_df.corr())
-    uplift_prediction = uplift_preds_df.mean(axis=1)
-    print(uplift_prediction)
+    uplift_prediction = uplift_preds_df.mean(axis=1).values
     df_submission = pd.DataFrame({'uplift': uplift_prediction}, index=X_test.index)
     print(df_submission)
     submission_folder = Path(f"../../data/submissions/")
