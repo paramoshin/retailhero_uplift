@@ -174,13 +174,6 @@ if __name__ == "__main__":
             clf_control = clone(models[args.model]).fit(X_train_control, y_train_control)
             clf_treatment = clone(models[args.model]).fit(X_train_treatment, y_train_treatment)
 
-        with open("../../data/xgb_control_feature_importance.json", "w") as f:
-            json.dump(clf_control.get_fscore(importance_type='gain'))
-        log_artifact("../../data/xgb_control_feature_importance.png", "contol-feature-importance-gain")
-        with open("../../data/xgb_treatment_feature_importance.json ", "w") as f:
-            json.dump(clf_treatment.get_fscore(importance_type='gain'))
-        log_artifact("../../data/xgb_control_feature_importance.png", "contol-feature-importance-gain")
-
         joblib.dump(clf_control, Path(f"../../models/two_models/{args.model}_refit_control.pkl").resolve())
         joblib.dump(clf_treatment, Path(f"../../models/two_models/{args.model}_refit_treatment.pkl").resolve())
         log_artifact(Path(f"../../models/two_models/{args.model}_refit_control.pkl").resolve(), f"control-clf-fold-{i}")
