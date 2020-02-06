@@ -1,6 +1,7 @@
 import argparse
 from datetime import datetime
 import json
+from collections import namedtuple
 import sys
 from pathlib import Path
 p = str(Path(".").resolve().parent.parent)
@@ -27,8 +28,7 @@ def fit_(model, X_train_control, X_train_treatment, y_train_control, y_train_tre
     clf_treatment = clone(model).fit(X_train_treatment, y_train_treatment)
     treatment_proba = clf_treatment.predict_proba(X_test)[:, 1]
     control_proba = clf_control.predict_proba(X_test)[:, 1]
-    uplift_prediction = treatment_proba - control_proba
-    return uplift_prediction
+    return control_proba, treatment_proba
 
 def get_cv_score(model, folds, X_train, y_train, train_is_treatment):
     control_acc = []
@@ -76,6 +76,13 @@ def get_cv_score(model, folds, X_train, y_train, train_is_treatment):
     return control_acc, treatment_acc, control_auc, treatment_auc, uplift
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--level_2", type=bool, default=False)
+    parser.add_argument("--w1", type=float, default=0.5)
+    parser.add_argument("--w2", type=float, default=0.5)
+
+    args = parser.parse_args()
+
     X_train, y_train, train_is_treatment, X_valid, y_valid, valid_is_treatment, X_test = read_train_test()
     X_train, y_train = join_train_validation(X_train, X_valid, y_train, y_valid)
     train_is_treatment = pd.concat([train_is_treatment, valid_is_treatment], ignore_index=False)
@@ -107,8 +114,9 @@ if __name__ == "__main__":
         X_train, y_train, train_is_treatment
     )
     scaler = StandardScaler()
+    Step = namedtuple("Step", "model X_train_control X_train_treatment y_train_control y_train_treatment X_test")
     level_1_steps = [
-        (
+        Step(
             clone(models["randomforest"]), 
             pd.DataFrame(
                 X_train_control[base_features].fillna(-99999), 
@@ -128,7 +136,7 @@ if __name__ == "__main__":
                 index=X_test.index
             )
         ),
-        (
+        Step(
             clone(models["logreg"]),
             pd.DataFrame(
                 scaler.fit_transform(X_train_control[base_features].fillna(-99999)),
@@ -148,7 +156,7 @@ if __name__ == "__main__":
                 index=X_test.index
             )
         ),
-        (
+        Step(
             clone(models["lightgbm"]), 
             pd.DataFrame(
                 X_train_control.fillna(-99999),
@@ -168,7 +176,7 @@ if __name__ == "__main__":
                 index=X_test.index
             )
         ),
-        (
+        Step(
             clone(models["gradientboosting"]), 
             pd.DataFrame(
                 X_train_control.fillna(-99999), 
@@ -188,7 +196,7 @@ if __name__ == "__main__":
                 index=X_test.index
             )
         ),
-        (
+        Step(
             clone(models["extratrees"]), 
             pd.DataFrame(
                 X_train_control[last_month_features].join(recency).join(frequency).fillna(-99999), 
@@ -208,7 +216,7 @@ if __name__ == "__main__":
                 index=X_test.index
             )
         ),
-        (
+        Step(
             clone(models["knn"]), 
             pd.DataFrame(
                 scaler.fit_transform(
@@ -237,17 +245,51 @@ if __name__ == "__main__":
             )
         ),
     ]
-    uplift_preds = []
+
+    control_probas = [] 
+    treatment_probas = []
+
     for i, step in enumerate(level_1_steps):
         print(f"------STEP {i + 1}------")
-        get_cv_score(step[0], folds, *join_train_validation(*step[1:5]), train_is_treatment)
-        uplift_preds.append(fit_(*step))
+        get_cv_score(
+            step.model, 
+            folds, 
+            *join_train_validation(
+                step.X_train_control, step.X_train_treatment, step.y_train_control, step.y_train_treatment
+            ), 
+            train_is_treatment
+        )
+        control_proba, treatment_proba = fit_(*step)
+        control_probas.append(control_proba)
+        treatment_probas.append(treatment_proba)
         print("\n")
-    uplift_preds_df = pd.DataFrame({f"step_{i}": uplift_preds[i] for i in range(len(level_1_steps))})
+    
+    if args.level_2:
+        lr_control = clone(models["logreg"]).fit(np.array(control_probas).T, y_train_control)
+        lr_treatment = clone(models["logreg"]).fit(np.array(treatment_probas).T, y_train_treatment)
+
+        xgb_control = clone(models["xgb"]).fit(np.array(control_probas).T, y_train_control)
+        xgb_treatment = clone(models["xgb"]).fit(np.array(control_probas).T, y_train_control)
+
+        uplift_lr = lr_treatment.predict_proba(X_test)[:, 1] - lr_control.predict_proba(X_test)[:, 1]
+        uplift_xgb = xgb_treatment.predict_proba(X_test)[:, 1] - xgb_control.predict_proba(X_test)[:, 1]
+
+        uplift_preds_df = pd.DataFrame({"uplift_lr": uplift_lr, "uplift_xgb": uplift_xgb})
+    else:
+        i, (treatment_proba, control_proba) in enumerate(zip(treatment_probas, control_probas)):
+            d = {f"step_{i}": treatment_proba - control_proba}
+        uplift_preds_df = pd.DataFrame(d)
+
     print(uplift_preds_df.corr())
-    uplift_prediction = uplift_preds_df.mean(axis=1).values
+
+    if args.level_2 and args.w1 != 0.5:
+        uplift_prediction = (w1 * uplift_lr) + (w2 * uplift_xgb)
+    else:
+        uplift_prediction = uplift_preds_df.mean(axis=1).values
+        
     df_submission = pd.DataFrame({'uplift': uplift_prediction}, index=X_test.index)
-    print(df_submission)
+    print(df_submission.head())
+
     submission_folder = Path(f"../../data/submissions/")
     submission_folder.mkdir(parents=True, exist_ok=True)
     df_submission.to_csv(f"{submission_folder}/submission_stacking_avg.csv")
