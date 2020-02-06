@@ -121,8 +121,10 @@ if __name__ == "__main__":
         treatment_proba = clf_treatment.predict_proba(test_data)[:, 1]
         control_proba = clf_control.predict_proba(test_data)[:, 1]
         uplift_prediction = treatment_proba - control_proba
-        up_score = uplift_score(uplift_prediction, test_data_is_treatment, test_target)
-        
+        up_score = uplift_score(
+            prediction=uplift_prediction, treatment=test_data_is_treatment.values, target=test_target.values
+        )
+
         control_acc = clf_control.score(test_data, test_target)
         treatment_acc = clf_treatment.score(test_data, test_target)
         control_auc = roc_auc_score(test_target, control_proba)
