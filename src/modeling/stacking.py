@@ -14,6 +14,7 @@ from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import KFold
 from sklearn.base import clone
 from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import StandardScaler
 from matplotlib import pyplot as plt
 from mlflow import log_metric, log_param, log_artifact
 
@@ -85,35 +86,60 @@ if __name__ == "__main__":
     frequency = pd.read_csv("../../data/processed/frequency.csv", index_col="client_id")
     level_1 = pd.read_csv("../../data/processed/level_1.csv", index_col="client_id").drop(["Unnamed: 0"], axis=1)
 
-    # 1 -> xgb, base
-    # 2 -> xgb, base + last_month
-    # 3 -> lightgmb, last_month + recency + frequency
-    # 4 -> lightgmb, base + recency + frequency
-    # 5 -> extratrees, last_month + level_1
-    # 6 -> np.mean, 1, 2, 3, 4, 5
+    # DATASET 1: base_features
+    # DATASET 2: base_features + last_month_features
+    # DATASET 3: base_features + last_month_features + recency + frequency
+    # LEVEL 1:
+    # RandmForest(Dataset1)
+    # LogisticRegression(Dataset1)
+    # LGBM(Dataset2)
+    # GBDT(Dataset2)
+    # Extratrees(Dataset3)
+    # KNN(Dataset3)
+    # LEVEL 2:
+    # LogisticRegression
+    # XGBoost
+    # WeighedAverage
 
     X_train_control, X_train_treatment, y_train_control, y_train_treatment = split_control_treatment(
         X_train, y_train, train_is_treatment
     )
-    steps = [
+    scaler = StandardScaler()
+    level_1_steps = [
         (
-            models["xgb"], 
-            X_train_control[base_features], 
-            X_train_treatment[base_features], 
+            models["randomforest"], 
+            X_train_control[base_features].fillna(-99999), 
+            X_train_treatment[base_features].fillna(-99999), 
             y_train_control, 
             y_train_treatment,
-            X_test[base_features]
+            X_test[base_features].fillna(-99999)
         ),
         (
-            models["xgb"],
-            X_train_control, 
-            X_train_treatment, 
+            models["logreg"],
+            scaler.fit_transform(X_train_control[base_features]), 
+            scaler.transform(X_train_treatment[base_features]), 
             y_train_control, 
             y_train_treatment, 
-            X_test
+            scaler.transform(X_test[base_features])
         ),
         (
             models["lightgbm"], 
+            X_train_control.fillna(-99999), 
+            X_train_treatment.fillna(-99999),
+            y_train_control, 
+            y_train_treatment,
+            X_test.fillna(-99999)
+        ),
+        (
+            models["gradientboosting"], 
+            X_train_control.fillna(-99999), 
+            X_train_treatment.fillna(-99999), 
+            y_train_control, 
+            y_train_treatment,
+            X_test.fillna(-99999)
+        ),
+        (
+            models["extratrees"], 
             X_train_control[last_month_features].join(recency).join(frequency).fillna(-99999), 
             X_train_treatment[last_month_features].join(recency).join(frequency).fillna(-99999), 
             y_train_control, 
@@ -121,24 +147,24 @@ if __name__ == "__main__":
             X_test[last_month_features].join(recency).join(frequency).fillna(-99999)
         ),
         (
-            models["lightgbm"], 
-            X_train_control[base_features].join(recency).join(frequency).fillna(-99999), 
-            X_train_treatment[base_features].join(recency).join(frequency).fillna(-99999), 
+            models["knn"], 
+            scaler.fit_transform(
+                X_train_control[last_month_features]
+                .join(recency).join(frequency).fillna(-99999)
+            ),
+            scaler.transform(
+                X_train_treatment[last_month_features]
+                .join(recency).join(frequency).fillna(-99999)
+            ),
             y_train_control, 
             y_train_treatment,
-            X_test[base_features].join(recency).join(frequency).fillna(-99999)
-        ),
-        (
-            models["extratrees"], 
-            X_train_control[last_month_features].join(level_1).fillna(-99999), 
-            X_train_treatment[last_month_features].join(level_1).fillna(-99999), 
-            y_train_control, 
-            y_train_treatment,
-            X_test[last_month_features].join(level_1).fillna(-99999)
+            scaler.transform(
+                X_test[last_month_features].join(recency).join(frequency).fillna(-99999)
+            )
         ),
     ]
     uplift_preds = []
-    for i, step in enumerate(steps):
+    for i, step in enumerate(level_1_steps):
         print(f"------STEP {i + 1}------")
         get_cv_score(step[0], folds, *join_train_validation(*step[1:5]), train_is_treatment)
         uplift_preds.append(fit_(*step))

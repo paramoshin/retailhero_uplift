@@ -9,7 +9,7 @@ sys.path.extend([p])
 import pandas as pd
 import numpy as np
 import xgboost as xgb
-from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import cross_val_score, StratifiedKFold
 from hyperopt import STATUS_OK, Trials, fmin, hp, tpe
 
 from src.modeling.utils import *
@@ -17,23 +17,27 @@ from src.modeling.utils import *
 
 def objective(space, X_train, y_train):
     classifier = xgb.XGBClassifier(
-        n_estimators = space["n_estimators"],
+#        n_estimators = space["n_estimators"],
         max_depth = int(space["max_depth"]),
-        learning_rate = space["learning_rate"],
+#        learning_rate = space["learning_rate"],
         gamma = space["gamma"],
-        min_child_weight = space["min_child_weight"],
-        subsample = space["subsample"],
+        # min_child_weight = space["min_child_weight"],
+        # subsample = space["subsample"],
         colsample_bytree = space["colsample_bytree"],
         n_jobs=-1,
         random_state=42
     )
-    print(f"fitting with params: {classifier.get_params()}")
     classifier.fit(X_train, y_train)
     # Applying k-Fold Cross Validation
-    logloss = cross_val_score(estimator=classifier, X=X_train, y=y_train, cv=5, scoring="neg_log_loss")
-    cross_val_mean = logloss.mean()
-    print("CrossValMean:", cross_val_mean)
-    return {"loss": 1 - cross_val_mean, "status": STATUS_OK}
+    loss = 1 - cross_val_score(
+        estimator=classifier, 
+        X=X_train, 
+        y=y_train, 
+        cv=StratifiedKFold(n_splits=5, random_state=42), 
+        scoring="roc_auc", 
+        n_jobs=-1
+    ).mean()
+    return {"loss": loss, "status": STATUS_OK}
 
 
 if __name__ == "__main__":
@@ -63,14 +67,14 @@ if __name__ == "__main__":
 
     space = {
         "max_depth" : hp.choice("max_depth", range(5, 30, 1)),
-        "learning_rate" : hp.quniform("learning_rate", 0.01, 0.5, 0.01),
-        "n_estimators" : hp.choice("n_estimators", range(20, 1000, 5)),
+        # "learning_rate" : hp.quniform("learning_rate", 0.01, 0.5, 0.01),
+        # "n_estimators" : hp.choice("n_estimators", range(20, 1000, 5)),
         "gamma" : hp.quniform("gamma", 0, 0.50, 0.01),
-        "min_child_weight" : hp.quniform("min_child_weight", 1, 10, 1),
-        "subsample" : hp.quniform("subsample", 0.1, 1, 0.01),
+        # "min_child_weight" : hp.quniform("min_child_weight", 1, 10, 1),
+        # "subsample" : hp.quniform("subsample", 0.1, 1, 0.01),
         "colsample_bytree" : hp.quniform("colsample_bytree", 0.1, 1.0, 0.01),
-        "reg_alpha" : hp.quniform("reg_alpha", 40,180,1),
-        "reg_lambda" : hp.uniform("reg_lambda", 0,1),
+#        "reg_alpha" : hp.quniform("reg_alpha", 40,180,1),
+#        "reg_lambda" : hp.uniform("reg_lambda", 0,1),
     }
     
     # Optimize control:
@@ -80,7 +84,7 @@ if __name__ == "__main__":
         space=space,
         algo=tpe.suggest,
         max_evals=50,
-        trials=trials
+        trials=trials,
     )
     print(f"Control best params: {best}")
 
@@ -102,7 +106,7 @@ if __name__ == "__main__":
         space=space,
         algo=tpe.suggest,
         max_evals=50,
-        trials=trials
+        trials=trials,
     )
     print(f"Treatment best params: {best}")
     with open(p + "_treatment.json", "w") as f:
