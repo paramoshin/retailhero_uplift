@@ -241,7 +241,7 @@ if __name__ == "__main__":
         get_cv_score(step[0], folds, *join_train_validation(*step[1:5]), train_is_treatment)
         uplift_preds.append(fit_(*step))
         print("\n")
-    uplift_preds_df = pd.DataFrame({f"step_{i}": uplift_preds[i] for i in range(len(steps))})
+    uplift_preds_df = pd.DataFrame({f"step_{i}": uplift_preds[i] for i in range(len(level_1_steps))})
     print(uplift_preds_df.corr())
     uplift_prediction = uplift_preds_df.mean(axis=1).values
     df_submission = pd.DataFrame({'uplift': uplift_prediction}, index=X_test.index)
