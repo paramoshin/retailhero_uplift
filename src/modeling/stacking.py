@@ -52,8 +52,8 @@ def get_cv_score(model, folds, X_train, y_train, train_is_treatment):
         X_train_control, X_train_treatment, y_train_control, y_train_treatment = split_control_treatment(
             train_data, train_target, train_data_is_treatment
         )
-        clf_control = model.fit(X_train_control, y_train_control)
-        clf_treatment = model.fit(X_train_treatment, y_train_treatment)
+        clf_control = clone(model).fit(X_train_control, y_train_control)
+        clf_treatment = clone(model).fit(X_train_treatment, y_train_treatment)
 
         treatment_proba = clf_treatment.predict_proba(test_data)[:, 1]
         control_proba = clf_control.predict_proba(test_data)[:, 1]
