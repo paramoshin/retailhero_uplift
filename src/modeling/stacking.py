@@ -192,10 +192,12 @@ if __name__ == "__main__":
                 X_train_control[last_month_features].join(recency).join(frequency).fillna(-99999), 
                 columns=last_month_features + recency.columns.tolist() + frequency.columns.tolist(),
                 index=X_train_control.index
+            ),
             pd.DataFrame(
                 X_train_treatment[last_month_features].join(recency).join(frequency).fillna(-99999), 
                 columns=last_month_features + recency.columns.tolist() + frequency.columns.tolist(),
                 index=X_train_treatment.index
+            ),
             y_train_control, 
             y_train_treatment,
             pd.DataFrame(
