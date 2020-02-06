@@ -162,6 +162,7 @@ if __name__ == "__main__":
         log_metric("average-" + k, v)
 
     if args.refit:
+        print("refit")
         X_train_control, X_train_treatment, y_train_control, y_train_treatment = split_control_treatment(
             X_train, y_train, train_is_treatment
         )
