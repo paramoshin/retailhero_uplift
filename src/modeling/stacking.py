@@ -108,58 +108,127 @@ if __name__ == "__main__":
     level_1_steps = [
         (
             models["randomforest"], 
-            X_train_control[base_features].fillna(-99999), 
-            X_train_treatment[base_features].fillna(-99999), 
+            pd.DataFrame(
+                X_train_control[base_features].fillna(-99999), 
+                columns=base_features, 
+                index=X_train_control.index
+            ), 
+            pd.DataFrame(
+                X_train_treatment[base_features].fillna(-99999), 
+                columns=base_features, 
+                index=X_train_treatment.index
+            ), 
             y_train_control, 
             y_train_treatment,
-            X_test[base_features].fillna(-99999)
+            pd.DataFrame(
+                X_test[base_features].fillna(-99999), 
+                columns=base_features,
+                index=X_test.index
+            )
         ),
         (
             models["logreg"],
-            scaler.fit_transform(X_train_control[base_features]), 
-            scaler.transform(X_train_treatment[base_features]), 
+            pd.DataFrame(
+                scaler.fit_transform(X_train_control[base_features]),
+                columns=base_features,
+                index=X_train_control.index
+            ), 
+            pd.DataFrame(
+                scaler.transform(X_train_treatment[base_features])
+                columns=base_features,
+                index=X_train_treatment.index
+            ), 
             y_train_control, 
             y_train_treatment, 
-            scaler.transform(X_test[base_features])
+            pd.DataFrame(
+                scaler.transform(X_test[base_features]),
+                columns=base_features,
+                index=X_test.index
+            )
         ),
         (
             models["lightgbm"], 
-            X_train_control.fillna(-99999), 
-            X_train_treatment.fillna(-99999),
+            pd.DataFrame(
+                X_train_control.fillna(-99999),
+                columns=X_train_control.columns,
+                index=X_train_control.index
+            ), 
+            pd.DataFrame(
+                X_train_treatment.fillna(-99999),
+                columns=X_train_treatment.columns,
+                index=X_train_treatment.index
+            ),
             y_train_control, 
             y_train_treatment,
-            X_test.fillna(-99999)
+            pd.DataFrame(
+                X_test.fillna(-99999),
+                columns=X_test.columns,
+                index=X_test.index
+            )
         ),
         (
             models["gradientboosting"], 
-            X_train_control.fillna(-99999), 
-            X_train_treatment.fillna(-99999), 
+            pd.DataFrame(
+                X_train_control.fillna(-99999), 
+                columns=X_train_control.columns,
+                index=X_train_control.index
+            ),
+            pd.DataFrame(
+                X_train_treatment.fillna(-99999), 
+                columns=X_train_treatment.columns,
+                index=X_train_treatment.index
+            ),
             y_train_control, 
             y_train_treatment,
-            X_test.fillna(-99999)
+            pd.DataFrame(
+                X_test.fillna(-99999),
+                columns=X_test.columns,
+                index=X_test.index
+            )
         ),
         (
             models["extratrees"], 
-            X_train_control[last_month_features].join(recency).join(frequency).fillna(-99999), 
-            X_train_treatment[last_month_features].join(recency).join(frequency).fillna(-99999), 
+            pd.DataFrame(
+                X_train_control[last_month_features].join(recency).join(frequency).fillna(-99999), 
+                columns=last_month_features + recency.columns.tolist() + frequency.columns.tolist(),
+                index=X_train_control.index
+            pd.DataFrame(
+                X_train_treatment[last_month_features].join(recency).join(frequency).fillna(-99999), 
+                columns=last_month_features + recency.columns.tolist() + frequency.columns.tolist(),
+                index=X_train_treatment.index
             y_train_control, 
             y_train_treatment,
-            X_test[last_month_features].join(recency).join(frequency).fillna(-99999)
+            pd.DataFrame(
+                X_test[last_month_features].join(recency).join(frequency).fillna(-99999),
+                columns=last_month_features + recency.columns.tolist() + frequency.columns.tolist(),
+                index=X_test.index
         ),
         (
             models["knn"], 
-            scaler.fit_transform(
-                X_train_control[last_month_features]
-                .join(recency).join(frequency).fillna(-99999)
+            pd.DataFrame(
+                scaler.fit_transform(
+                    X_train_control[last_month_features]
+                    .join(recency).join(frequency).fillna(-99999)
+                ),
+                columns=last_month_features + recency.columns.tolist() + frequency.columns.tolist(),
+                index=X_train_control.index
             ),
-            scaler.transform(
-                X_train_treatment[last_month_features]
-                .join(recency).join(frequency).fillna(-99999)
+            pd.DataFrame(
+                scaler.transform(
+                    X_train_treatment[last_month_features]
+                    .join(recency).join(frequency).fillna(-99999)
+                ),
+                columns=last_month_features + recency.columns.tolist() + frequency.columns.tolist(),
+                index=X_train_treatment.index
             ),
             y_train_control, 
             y_train_treatment,
-            scaler.transform(
-                X_test[last_month_features].join(recency).join(frequency).fillna(-99999)
+                pd.DataFrame(
+                scaler.transform(
+                    X_test[last_month_features].join(recency).join(frequency).fillna(-99999)
+                ),
+                columns=last_month_features + recency.columns.tolist() + frequency.columns.tolist(),
+                index=X_test.index
             )
         ),
     ]
