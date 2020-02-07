@@ -69,12 +69,12 @@ if __name__ == "__main__":
         X_train = X_train.join(level_1)
         X_test = X_test.join(level_1)
     if args.lda:
-        lda = pd.read_csv("../..data/processed/bucket_types.csv", index_col=["client_id"])
+        lda = pd.read_csv("../../data/processed/bucket_types.csv", index_col=["client_id"])
         lda.columns = [f"lda_{x}" for x in lda.columns]
         X_train = X_train.join(lda)
         X_test = X_test.join(lda)
     if args.w2v:
-        w2v = pd.read_csv("../..data/processed/w2v_repr.csv", index_col=["client_id"])
+        w2v = pd.read_csv("../../data/processed/w2v_repr.csv", index_col=["client_id"])
         w2v.columns = [f"w2v_{x}" for x in w2v.columns]
         X_train = X_train.join(w2v)
         X_test = X_test.join(w2v)
