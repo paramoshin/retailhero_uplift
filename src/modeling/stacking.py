@@ -282,7 +282,7 @@ if __name__ == "__main__":
 
     print(uplift_preds_df.corr())
 
-    if args.level_2 and args.w1 != 0.5:
+    if args.level_2 and args.w1 != 0.5 and ars.w2 != 0.5:
         uplift_prediction = (w1 * uplift_lr) + (w2 * uplift_xgb)
     else:
         uplift_prediction = uplift_preds_df.mean(axis=1).values
@@ -292,4 +292,13 @@ if __name__ == "__main__":
 
     submission_folder = Path(f"../../data/submissions/")
     submission_folder.mkdir(parents=True, exist_ok=True)
-    df_submission.to_csv(f"{submission_folder}/submission_stacking_avg.csv")
+
+    f_name = "stacking_"
+    if args.level_2:
+        f_name += "level_2_"
+        if args.w1 != 0.5 and args.w2 != 0.5:
+            f_name += f"{str(w1).replace(".", "")}_{str(w2).replace(".", "")}"
+    else:
+        f_name += "level_1_avg"
+
+    df_submission.to_csv(f"{submission_folder}/{f_name}.csv")
