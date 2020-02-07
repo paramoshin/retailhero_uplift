@@ -89,7 +89,7 @@ if __name__ == "__main__":
         X_train.fillna(-999999, inplace=True)
         X_test.fillna(-999999, inplace=True)
 
-    for i in range(5):
+    for i in range(folds["fold"].nunique()):
         print(f"Fold {i + 1}")
         test_idx = folds[folds["fold"] == i].index
         train_idx = folds[folds["fold"] != i].index

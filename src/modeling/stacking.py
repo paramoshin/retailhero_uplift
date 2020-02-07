@@ -276,7 +276,7 @@ if __name__ == "__main__":
 
         uplift_preds_df = pd.DataFrame({"uplift_lr": uplift_lr, "uplift_xgb": uplift_xgb})
     else:
-        i, (treatment_proba, control_proba) in enumerate(zip(treatment_probas, control_probas)):
+        for i, (treatment_proba, control_proba) in enumerate(zip(treatment_probas, control_probas)):
             d = {f"step_{i}": treatment_proba - control_proba}
         uplift_preds_df = pd.DataFrame(d)
 
@@ -297,7 +297,7 @@ if __name__ == "__main__":
     if args.level_2:
         f_name += "level_2_"
         if args.w1 != 0.5 and args.w2 != 0.5:
-            f_name += f"{str(w1).replace(".", "")}_{str(w2).replace(".", "")}"
+            f_name += f"{str(w1).replace('.', '')}_{str(w2).replace('.', '')}"
     else:
         f_name += "level_1_avg"
 
