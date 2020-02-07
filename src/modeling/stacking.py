@@ -26,8 +26,10 @@ from src.modeling.models import models
 def fit_(model, X_train_control, X_train_treatment, y_train_control, y_train_treatment, X_test):
     clf_control = clone(model).fit(X_train_control, y_train_control)
     clf_treatment = clone(model).fit(X_train_treatment, y_train_treatment)
-    treatment_proba = clf_treatment.predict_proba(X_test)[:, 1]
-    control_proba = clf_control.predict_proba(X_test)[:, 1]
+    # treatment_proba = clf_treatment.predict_proba(X_test)[:, 1]
+    # control_proba = clf_control.predict_proba(X_test)[:, 1]
+    control_proba = clf_control.predict_proba(X_train_control)[:, 1]
+    treatment_proba = clf_control.predict_proba(X_train_treatment)[:, 1]
     return control_proba, treatment_proba
 
 def get_cv_score(model, folds, X_train, y_train, train_is_treatment):
@@ -250,8 +252,6 @@ if __name__ == "__main__":
     treatment_probas = []
 
     for i, step in enumerate(level_1_steps):
-        if i == 2:
-            break
         print(f"------STEP {i + 1}------")
         get_cv_score(
             step.model, 
