@@ -36,6 +36,8 @@ if __name__ == "__main__":
     parser.add_argument("--recency", type=bool, default=False)
     parser.add_argument("--frequency", type=bool, default=False)
     parser.add_argument("--level_1", type=bool, default=False)
+    parser.add_argument("--lda", type=bool, default=False)
+    parser.add_argument("--w2v", type=bool, default=False)
     parser.add_argument("--refit", type=bool, default=False)
     parser.add_argument("--use_best", type=bool, default=False)
     parser.add_argument("--platts_scaling", type=bool, default=False)
@@ -66,6 +68,16 @@ if __name__ == "__main__":
         level_1 = pd.read_csv("../../data/processed/level_1.csv", index_col="client_id").drop(["Unnamed: 0"], axis=1)
         X_train = X_train.join(level_1)
         X_test = X_test.join(level_1)
+    if args.lda:
+        lda = pd.read_csv("../..data/processed/bucket_types.csv", index_col=["client_id"])
+        lda.columns = [f"lda_{x}" for x in lda.columns]
+        X_train = X_train.join(lda)
+        X_test = X_test.join(lda)
+    if args.w2v:
+        w2v = pd.read_csv("../..data/processed/w2v_repr.csv", index_col=["client_id"])
+        w2v.columns = [f"w2v_{x}" for x in w2v.columns]
+        X_train = X_train.join(w2v)
+        X_test = X_test.join(w2v)
 
     dt = datetime.now().strftime("%Y-%m-%d-%H-%M")
 
