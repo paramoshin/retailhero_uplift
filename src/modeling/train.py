@@ -48,9 +48,12 @@ if __name__ == "__main__":
     log_param("recency", args.recency)
     log_param("frequency", args.frequency)
     log_param("level_1", args.level_1)
+    log_param("lda", args.lda)
+    log_param("w2v", args.w2v)
     log_param("refit", args.refit)
     log_param("use_best", args.use_best)
-
+    log_param("platts_scaling", args.platts_scaling)
+    
     X_train, y_train, train_is_treatment, X_valid, y_valid, valid_is_treatment, X_test = read_train_test()
     X_train, y_train = join_train_validation(X_train, X_valid, y_train, y_valid)
     train_is_treatment = pd.concat([train_is_treatment, valid_is_treatment], ignore_index=False)
