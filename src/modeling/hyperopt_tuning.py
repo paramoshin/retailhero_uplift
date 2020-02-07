@@ -17,13 +17,10 @@ from src.modeling.utils import *
 
 def objective(space, X_train, y_train):
     classifier = xgb.XGBClassifier(
-#        n_estimators = space["n_estimators"],
-        max_depth = int(space["max_depth"]),
-#        learning_rate = space["learning_rate"],
-        gamma = space["gamma"],
-        # min_child_weight = space["min_child_weight"],
+        n_estimators = space["n_estimators"],
+        learning_rate = space["learning_rate"],
+        min_child_weight = space["min_child_weight"],
         # subsample = space["subsample"],
-        colsample_bytree = space["colsample_bytree"],
         n_jobs=-1,
         random_state=42
     )
@@ -66,28 +63,14 @@ if __name__ == "__main__":
     )
 
     space = {
-        "max_depth" : hp.choice("max_depth", range(5, 30, 1)),
-        # "learning_rate" : hp.quniform("learning_rate", 0.01, 0.5, 0.01),
-        # "n_estimators" : hp.choice("n_estimators", range(20, 1000, 5)),
-        "gamma" : hp.quniform("gamma", 0, 0.50, 0.01),
-        # "min_child_weight" : hp.quniform("min_child_weight", 1, 10, 1),
+        "learning_rate" : hp.quniform("learning_rate", 0.01, 0.5, 0.01),
+        "n_estimators" : hp.choice("n_estimators", range(20, 1000, 5)),
+        "min_child_weight" : hp.quniform("min_child_weight", 1, 10, 1),
         # "subsample" : hp.quniform("subsample", 0.1, 1, 0.01),
-        "colsample_bytree" : hp.quniform("colsample_bytree", 0.1, 1.0, 0.01),
 #        "reg_alpha" : hp.quniform("reg_alpha", 40,180,1),
 #        "reg_lambda" : hp.uniform("reg_lambda", 0,1),
     }
     
-    # Optimize control:
-    trials = Trials()
-    best = fmin(
-        fn=partial(objective, X_train=X_train_control, y_train=y_train_control),
-        space=space,
-        algo=tpe.suggest,
-        max_evals=50,
-        trials=trials,
-    )
-    print(f"Control best params: {best}")
-
     p = "../../models/hyperopt"
     if args.recency:
         p += "_recency"
@@ -96,27 +79,62 @@ if __name__ == "__main__":
     if args.level_1:
         p += "_level_1"
 
-    best["max_depth"] = int(best["max_depth"])
-    best["gamma"] = float(best["gamma"])
-    best["colsample_bytree"] = float(best["colsample_bytree"])
+    p_control = Path(p + "_control.json")
+    p_treatment = Path(p + "_treatment.json")
+    
+    if p_control.exists():
+        with open(p_control, "r") as f:
+            space_control = space.update(json.load(f))
+    else:
+        space_control = space
 
-    with open (p + "_control.json", "w") as f:
-        json.dump(best, f)
+    space_treatment = {}
+    if p_treatment.exists():
+        with open(p_treatment, "r") as f:
+            space_treatment = space.update(json.load(f))
+    else:
+        space_treatment = {}
+
+    # Optimize control:
+    trials = Trials()
+    best = fmin(
+        fn=partial(objective, X_train=X_train_control, y_train=y_train_control),
+        space=space_control,
+        algo=tpe.suggest,
+        max_evals=50,
+        trials=trials,
+    )
+    print(f"Control best params: {best}")
+
+    best["learning_rate"] = float(best["learning_rate"])
+    best["n_estimators"] = int(best["n_estimators"])
+    best["min_child_weight"] = int(best["min_child_weight"])
+
+    if p_control.exists():
+        with open (p_control, "r") as f:
+            d = json.load(f)
+        best = d.update(best)
+    with open(p_control, "w") as f:
+        json.dump(best)
 
     # Optimize treatment:
     trials = Trials()
     best = fmin(
         fn=partial(objective, X_train=X_train_treatment, y_train=y_train_treatment),
-        space=space,
+        space=space_treatment,
         algo=tpe.suggest,
         max_evals=50,
         trials=trials,
     )
 
-    best["max_depth"] = int(best["max_depth"])
-    best["gamma"] = float(best["gamma"])
-    best["colsample_bytree"] = float(best["colsample_bytree"])
+    best["learning_rate"] = float(best["learning_rate"])
+    best["n_estimators"] = int(best["n_estimators"])
+    best["min_child_weight"] = int(best["min_child_weight"])
 
     print(f"Treatment best params: {best}")
-    with open(p + "_treatment.json", "w") as f:
-        json.dump(best, f)
+    if p_treatment.exists():
+        with open (p_treatment, "r") as f:
+            d = json.load(f)
+        best = d.update(best)
+    with open(p_treatment, "w") as f:
+        json.dump(d)
