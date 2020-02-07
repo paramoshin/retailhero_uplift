@@ -17,7 +17,7 @@ if __name__ == "__main__":
             "product_quantity"
         ]
     )
-    products = pd.read_csv("../data/raw/products.csv")
+    products = pd.read_csv("../../data/raw/products.csv")
 
     purchases["products_list"] = purchases["product_id"].apply(lambda x: [x]) * purchases["product_quantity"].fillna(0).astype(int)
     data = purchases.groupby(["client_id", "transaction_id"])[["products_list"]].sum().reset_index()
