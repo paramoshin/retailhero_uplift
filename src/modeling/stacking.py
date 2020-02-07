@@ -250,6 +250,8 @@ if __name__ == "__main__":
     treatment_probas = []
 
     for i, step in enumerate(level_1_steps):
+        if i == 2:
+            break
         print(f"------STEP {i + 1}------")
         get_cv_score(
             step.model, 
@@ -264,6 +266,14 @@ if __name__ == "__main__":
         treatment_probas.append(treatment_proba)
         print("\n")
     
+    print(control_probas.shape)
+    print(treatment_probas.shape)
+
+    print(np.array(control_probas).T)
+    print(np.array(control_probas).T.shape)
+    print(np.array(treatment_probas).T)
+    print(np.array(treatment_probas).T.shape)
+
     if args.level_2:
         lr_control = clone(models["logreg"]).fit(np.array(control_probas).T, y_train_control)
         lr_treatment = clone(models["logreg"]).fit(np.array(treatment_probas).T, y_train_treatment)
