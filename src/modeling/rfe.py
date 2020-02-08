@@ -1,3 +1,8 @@
+import sys
+from pathlib import Path
+p = str(Path(".").resolve().parent.parent)
+sys.path.extend([p])
+
 import xgboost as xgb
 from matplotlib import pyplot as plt
 from sklearn.base import clone
@@ -8,7 +13,7 @@ from src.modeling.utils import *
 
 
 if __name__ == "__main__":
-    
+
     X_train, y_train, train_is_treatment, X_valid, y_valid, valid_is_treatment, X_test = read_train_test()
     X_train, y_train = join_train_validation(X_train, X_valid, y_train, y_valid)
     train_is_treatment = pd.concat([train_is_treatment, valid_is_treatment], ignore_index=False)
