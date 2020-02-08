@@ -27,7 +27,6 @@ from src.modeling.models import models
 #   - frequency - 0,0869
 #   - recency, frequency - 0,0821
 #   - recency, frequency, level_1 - 0,0752
-#   - base, log_reg transformation - 
 
 
 if __name__ == "__main__":
@@ -104,68 +103,70 @@ if __name__ == "__main__":
         X_train.fillna(-999999, inplace=True)
         X_test.fillna(-999999, inplace=True)
 
-    for i in range(folds["fold"].nunique()):
-        print(f"Fold {i + 1}")
-        test_idx = folds[folds["fold"] == i].index
-        train_idx = folds[folds["fold"] != i].index
-    
-        train_data = X_train.loc[train_idx]
-        train_target = y_train.loc[train_idx]
-        train_data_is_treatment = train_is_treatment.loc[train_idx]
-    
-        test_data = X_train.loc[test_idx]
-        test_target = y_train.loc[test_idx]
-        test_data_is_treatment = train_is_treatment.loc[test_idx]
-    
-        X_train_control, X_train_treatment, y_train_control, y_train_treatment = split_control_treatment(
-            train_data, train_target, train_data_is_treatment
-        )
-        X_valid_control, X_valid_treatment, y_valid_control, y_valid_treatment = split_control_treatment(
-            test_data, test_target, test_data_is_treatment
-        )
+    for rs in folds.columns:
+        print(rs)
+        for i in range(folds[rs].nunique()):
+            print(f"  Fold {i + 1}")
+            test_idx = folds[folds[rs] == i].index
+            train_idx = folds[folds[rs] != i].index
+        
+            train_data = X_train.loc[train_idx]
+            train_target = y_train.loc[train_idx]
+            train_data_is_treatment = train_is_treatment.loc[train_idx]
+        
+            test_data = X_train.loc[test_idx]
+            test_target = y_train.loc[test_idx]
+            test_data_is_treatment = train_is_treatment.loc[test_idx]
+        
+            X_train_control, X_train_treatment, y_train_control, y_train_treatment = split_control_treatment(
+                train_data, train_target, train_data_is_treatment
+            )
+            X_valid_control, X_valid_treatment, y_valid_control, y_valid_treatment = split_control_treatment(
+                test_data, test_target, test_data_is_treatment
+            )
 
-        if args.model == "xgb" and args.use_best:
-            clf_control = xgb.XGBClassifier(objective="binary:logistic", **control_best_params)\
-                .fit(X_train_control, y_train_control)
-            clf_treatment = xgb.XGBClassifier(objective="binary:logistic", **treatment_best_params)\
-                .fit(X_train_treatment, y_train_treatment)
-        else:
-            clf_control = clone(models[args.model]).fit(X_train_control, y_train_control)
-            clf_treatment = clone(models[args.model]).fit(X_train_treatment, y_train_treatment)
+            if args.model == "xgb" and args.use_best:
+                clf_control = xgb.XGBClassifier(objective="binary:logistic", **control_best_params)\
+                    .fit(X_train_control, y_train_control)
+                clf_treatment = xgb.XGBClassifier(objective="binary:logistic", **treatment_best_params)\
+                    .fit(X_train_treatment, y_train_treatment)
+            else:
+                clf_control = clone(models[args.model]).fit(X_train_control, y_train_control)
+                clf_treatment = clone(models[args.model]).fit(X_train_treatment, y_train_treatment)
 
-        control_proba = clf_control.predict_proba(test_data)[:, 1]
-        treatment_proba = clf_treatment.predict_proba(test_data)[:, 1]
-        uplift_prediction = treatment_proba - control_proba
-        up_score = uplift_score(
-            prediction=uplift_prediction, treatment=test_data_is_treatment.values, target=test_target.values
-        )
+            control_proba = clf_control.predict_proba(test_data)[:, 1]
+            treatment_proba = clf_treatment.predict_proba(test_data)[:, 1]
+            uplift_prediction = treatment_proba - control_proba
+            up_score = uplift_score(
+                prediction=uplift_prediction, treatment=test_data_is_treatment.values, target=test_target.values
+            )
 
-        control_acc = clf_control.score(test_data, test_target)
-        treatment_acc = clf_treatment.score(test_data, test_target)
-        control_auc = roc_auc_score(test_target, control_proba)
-        treatment_auc = roc_auc_score(test_target, treatment_proba)
-        uplift = up_score
+            control_acc = clf_control.score(test_data, test_target)
+            treatment_acc = clf_treatment.score(test_data, test_target)
+            control_auc = roc_auc_score(test_target, control_proba)
+            treatment_auc = roc_auc_score(test_target, treatment_proba)
+            uplift = up_score
 
-        log_metric("control-acc", control_acc)
-        log_metric("treatment-acc", treatment_acc)
-        log_metric("control-auc", control_auc)
-        log_metric("treatment-auc", treatment_auc)
-        log_metric("uplift", uplift)
+            log_metric("control-acc", control_acc)
+            log_metric("treatment-acc", treatment_acc)
+            log_metric("control-auc", control_auc)
+            log_metric("treatment-auc", treatment_auc)
+            log_metric("uplift", uplift)
 
-        metrics["control_acc"].append(control_acc)
-        metrics["treatment_acc"].append(treatment_acc)
-        metrics["control_auc"].append(control_auc)
-        metrics["treatment_auc"].append(treatment_auc)
-        metrics["uplift"].append(uplift)
-    
-        folder = Path(f"../../models/two_models/folds/{dt}")
-        folder.mkdir(parents=True, exist_ok=True)
-        model_name = args.model + f"_fold_{i}"
-        joblib.dump(clf_control, (folder / Path(model_name + "_control.pkl")).resolve())
-        joblib.dump(clf_treatment, (folder / Path(model_name + "_treatment.pkl")).resolve())
+            metrics["control_acc"].append(control_acc)
+            metrics["treatment_acc"].append(treatment_acc)
+            metrics["control_auc"].append(control_auc)
+            metrics["treatment_auc"].append(treatment_auc)
+            metrics["uplift"].append(uplift)
+        
+            folder = Path(f"../../models/two_models/folds/{dt}")
+            folder.mkdir(parents=True, exist_ok=True)
+            model_name = args.model + f"_fold_{i}"
+            joblib.dump(clf_control, (folder / Path(model_name + "_control.pkl")).resolve())
+            joblib.dump(clf_treatment, (folder / Path(model_name + "_treatment.pkl")).resolve())
 
-        log_artifact((folder / Path(model_name + "_control.pkl")).resolve(), f"control-clf-fold-{i}")
-        log_artifact((folder / Path(model_name + "_treatment.pkl")).resolve(), f"treatment-clf-fold-{i}")
+            log_artifact((folder / Path(model_name + "_control.pkl")).resolve(), f"control-clf-fold-{i}")
+            log_artifact((folder / Path(model_name + "_treatment.pkl")).resolve(), f"treatment-clf-fold-{i}")
     
     log_param("clf-control-params", clf_control.get_params())
     log_param("clf-treatment-params", clf_treatment.get_params())
