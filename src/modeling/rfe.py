@@ -3,6 +3,7 @@ from pathlib import Path
 p = str(Path(".").resolve().parent.parent)
 sys.path.extend([p])
 
+import pandas as pd
 import xgboost as xgb
 from matplotlib import pyplot as plt
 from sklearn.base import clone
