@@ -121,7 +121,7 @@ if __name__ == "__main__":
             d = json.load(f)
         best = d.update(best)
     with open(p_control, "w") as f:
-        json.dump(best)
+        json.dump(best, f)
 
     # Optimize treatment:
     trials = Trials()
@@ -143,4 +143,4 @@ if __name__ == "__main__":
             d = json.load(f)
         best = d.update(best)
     with open(p_treatment, "w") as f:
-        json.dump(d)
+        json.dump(best, f)
