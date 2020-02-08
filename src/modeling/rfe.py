@@ -39,11 +39,15 @@ if __name__ == "__main__":
     X_control, X_treatment, y_control, y_treatment = split_control_treatment(X_train, y_train, train_is_treatment)
 
     clf_control = xgb.XGBClassifier(random_state=42, n_jobs=-1)
-    selector_control = RFECV(clf_control, step=1, min_features_to_select=1, cv=5, scoring='roc_auc_score', verbose=1)
+    selector_control = RFECV(
+        estimator=clf_control, step=1, min_features_to_select=1, cv=5, scoring='roc_auc_score', verbose=1, n_jobs=-1
+    )
     selector_control.fit(X_control, y_control)
 
     clf_treatment = xgb.XGBClassifier(random_state=42, n_jobs=-1)
-    selector_treatment = RFECV(clf_treatment, step=1, min_features_to_select=1, cv=5, scoring='roc_auc_score', verbose=1)
+    selector_treatment = RFECV(
+        estimator=clf_treatment, step=1, min_features_to_select=1, cv=5, scoring='roc_auc_score', verbose=1, n_jobs=-1
+    )
     selector_treatment.fit(X_treatment, y_treatment)
 
     plt.figure()
@@ -60,5 +64,5 @@ if __name__ == "__main__":
     plt.plot(range(1, len(selector_treatment.grid_scores_) + 1), selector_treatment.grid_scores_)
     plt.savefig("../../data/treatment_rfe_score.png")    
 
-    print("control", selector_control.get_support)
-    print("treatment", selector_treatment.get_support)
+    print("control", selector_control.get_support())
+    print("treatment", selector_treatment.get_support())
