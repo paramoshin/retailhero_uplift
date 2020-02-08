@@ -41,10 +41,10 @@ def get_cv_score(model, folds, X_train, y_train, train_is_treatment):
     control_auc = []
     treatment_auc = []
     uplift = []
-    for i in range(folds["fold"].nunique()):
+    for i in range(folds[folds.columns[0]].nunique()):
         print(f"Fold {i + 1}")
-        test_idx = folds[folds["fold"] == i].index
-        train_idx = folds[folds["fold"] != i].index
+        test_idx = folds[folds[folds.columns[0]] == i].index
+        train_idx = folds[folds[folds.columns[0]] != i].index
     
         train_data = X_train.loc[train_idx]
         train_target = y_train.loc[train_idx]
