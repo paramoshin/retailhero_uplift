@@ -12,6 +12,6 @@ models = {
     "extratrees": ensemble.ExtraTreesClassifier(n_estimators=200, random_state=42, n_jobs=-1),
     "lightgbm": LGBMClassifier(),
     "logreg": LogisticRegression(),
-    "knn": KNeighborsClassifier(),
+    "knn": KNeighborsClassifier(n_neighbors=7, n_jobs=-1),
     "gradientboosting": ensemble.GradientBoostingClassifier(n_estimators=200, random_state=42),
 }

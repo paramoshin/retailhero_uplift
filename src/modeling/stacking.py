@@ -266,9 +266,6 @@ if __name__ == "__main__":
         treatment_probas.append(treatment_proba)
         print("\n")
     
-    print(control_probas.shape)
-    print(treatment_probas.shape)
-
     print(np.array(control_probas).T)
     print(np.array(control_probas).T.shape)
     print(np.array(treatment_probas).T)
