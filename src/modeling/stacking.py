@@ -23,13 +23,16 @@ from src.modeling.utils import *
 from src.modeling.models import models
 
 
-def fit_(model, X_train_control, X_train_treatment, y_train_control, y_train_treatment, X_test):
+def fit_(model, X_train_control, X_train_treatment, y_train_control, y_train_treatment, X_test, predict_test=True):
     clf_control = clone(model).fit(X_train_control, y_train_control)
     clf_treatment = clone(model).fit(X_train_treatment, y_train_treatment)
-    # treatment_proba = clf_treatment.predict_proba(X_test)[:, 1]
-    # control_proba = clf_control.predict_proba(X_test)[:, 1]
-    control_proba = clf_control.predict_proba(X_train_control)[:, 1]
-    treatment_proba = clf_control.predict_proba(X_train_treatment)[:, 1]
+    X_train = np.vstack((X_train_control, X_train_treatment))
+    if predict_test == False:
+        control_proba = clf_control.predict_proba(X_train)[:, 1]
+        treatment_proba = clf_control.predict_proba(X_train)[:, 1]
+    else:
+        control_proba = clf_control.predict_proba(X_test)[:, 1]
+        treatment_proba = clf_control.predict_proba(X_test)[:, 1]
     return control_proba, treatment_proba
 
 def get_cv_score(model, folds, X_train, y_train, train_is_treatment):
@@ -261,7 +264,10 @@ if __name__ == "__main__":
             ), 
             train_is_treatment
         )
-        control_proba, treatment_proba = fit_(*step)
+        if args.level_2:
+            control_proba, treatment_proba = fit_(*step, predict_test=False)
+        else:
+            control_proba, treatment_proba = fit_(*step, predict_test=True)
         control_probas.append(control_proba)
         treatment_probas.append(treatment_proba)
         print("\n")
@@ -272,11 +278,13 @@ if __name__ == "__main__":
     print(np.array(treatment_probas).T.shape)
 
     if args.level_2:
-        lr_control = clone(models["logreg"]).fit(np.array(control_probas).T, y_train_control)
-        lr_treatment = clone(models["logreg"]).fit(np.array(treatment_probas).T, y_train_treatment)
+        y_train = np.vstack((y_train_control, y_train_treatment))
 
-        xgb_control = clone(models["xgb"]).fit(np.array(control_probas).T, y_train_control)
-        xgb_treatment = clone(models["xgb"]).fit(np.array(control_probas).T, y_train_control)
+        lr_control = clone(models["logreg"]).fit(np.array(control_probas).T, y_train)
+        lr_treatment = clone(models["logreg"]).fit(np.array(treatment_probas).T, y_train)
+
+        xgb_control = clone(models["xgb"]).fit(np.array(control_probas).T, y_train)
+        xgb_treatment = clone(models["xgb"]).fit(np.array(control_probas).T, y_train)
 
         uplift_lr = lr_treatment.predict_proba(X_test)[:, 1] - lr_control.predict_proba(X_test)[:, 1]
         uplift_xgb = xgb_treatment.predict_proba(X_test)[:, 1] - xgb_control.predict_proba(X_test)[:, 1]
