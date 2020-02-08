@@ -278,8 +278,6 @@ if __name__ == "__main__":
     print(np.array(treatment_probas).T.shape)
 
     if args.level_2:
-        y_train = np.vstack((y_train_control, y_train_treatment))
-
         lr_control = clone(models["logreg"]).fit(np.array(control_probas).T, y_train)
         lr_treatment = clone(models["logreg"]).fit(np.array(treatment_probas).T, y_train)
 

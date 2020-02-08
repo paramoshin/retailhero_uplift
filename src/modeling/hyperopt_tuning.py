@@ -1,5 +1,6 @@
 import argparse
 import json
+from copy import copy
 from functools import partial
 import sys
 from pathlib import Path
@@ -17,10 +18,11 @@ from src.modeling.utils import *
 
 def objective(space, X_train, y_train):
     classifier = xgb.XGBClassifier(
-        n_estimators = space["n_estimators"],
-        learning_rate = space["learning_rate"],
-        min_child_weight = space["min_child_weight"],
+        # n_estimators = int(space["n_estimators"]),
+        # learning_rate = space["learning_rate"],
+        # min_child_weight = space["min_child_weight"],
         # subsample = space["subsample"],
+        **space,
         n_jobs=-1,
         random_state=42
     )
@@ -64,7 +66,7 @@ if __name__ == "__main__":
 
     space = {
         "learning_rate" : hp.quniform("learning_rate", 0.01, 0.5, 0.01),
-        "n_estimators" : hp.choice("n_estimators", range(20, 1000, 5)),
+        "n_estimators" : hp.choice("n_estimators", range(100, 1000, 10)),
         "min_child_weight" : hp.quniform("min_child_weight", 1, 10, 1),
         # "subsample" : hp.quniform("subsample", 0.1, 1, 0.01),
 #        "reg_alpha" : hp.quniform("reg_alpha", 40,180,1),
@@ -84,17 +86,21 @@ if __name__ == "__main__":
     
     if p_control.exists():
         with open(p_control, "r") as f:
-            space_control = space.update(json.load(f))
+            d = json.load(f)
+        space_control = copy(space)
+        space_control.update(d)
     else:
         space_control = space
 
     space_treatment = {}
     if p_treatment.exists():
         with open(p_treatment, "r") as f:
-            space_treatment = space.update(json.load(f))
+            d = json.load(f)
+        space_treatment =copy(space)
+        space_treatment.update(d)
     else:
         space_treatment = {}
-
+    
     # Optimize control:
     trials = Trials()
     best = fmin(
