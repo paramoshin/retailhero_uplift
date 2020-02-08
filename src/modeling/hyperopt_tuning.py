@@ -67,7 +67,7 @@ if __name__ == "__main__":
         "gamma": hp.quniform("gamma", 0.1, 1, 0.05),
         "colsample_bytree": hp.quniform("colsample_bytree", 0.5, 1, 0.05),
         "max_depth":  hp.choice("max_depth", np.arange(1, 14, dtype=int)),
-        "objective": "binary:logistic"
+        "objective": "binary:logistic",
         "eta": hp.quniform("eta", 0.025, 0.5, 0.025),
         "subsample" : hp.quniform("subsample", 0.1, 1, 0.01),
         "reg_alpha" : hp.quniform("reg_alpha", 40,180,1),
