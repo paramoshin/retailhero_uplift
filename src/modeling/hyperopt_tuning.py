@@ -4,6 +4,7 @@ from copy import copy
 from functools import partial
 import sys
 from pathlib import Path
+
 p = str(Path(".").resolve().parent.parent)
 sys.path.extend([p])
 
@@ -17,21 +18,20 @@ from src.modeling.utils import *
 
 
 def objective(space, X_train, y_train):
-    classifier = xgb.XGBClassifier(
-        **space,
-        n_jobs=-1,
-        random_state=42
-    )
+    classifier = xgb.XGBClassifier(**space, n_jobs=-1, random_state=42)
     classifier.fit(X_train, y_train)
     # Applying k-Fold Cross Validation
-    loss = 1 - cross_val_score(
-        estimator=classifier, 
-        X=X_train, 
-        y=y_train, 
-        cv=StratifiedKFold(n_splits=5, random_state=42), 
-        scoring="roc_auc", 
-        n_jobs=-1
-    ).mean()
+    loss = (
+        1
+        - cross_val_score(
+            estimator=classifier,
+            X=X_train,
+            y=y_train,
+            cv=StratifiedKFold(n_splits=5, random_state=42),
+            scoring="roc_auc",
+            n_jobs=-1,
+        ).mean()
+    )
     return {"loss": loss, "status": STATUS_OK}
 
 
@@ -42,7 +42,15 @@ if __name__ == "__main__":
     parser.add_argument("--level_1", type=bool, default=False)
     args = parser.parse_args()
 
-    X_train, y_train, train_is_treatment, X_valid, y_valid, valid_is_treatment, X_test = read_train_test()
+    (
+        X_train,
+        y_train,
+        train_is_treatment,
+        X_valid,
+        y_valid,
+        valid_is_treatment,
+        X_test,
+    ) = read_train_test()
     X_train, y_train = join_train_validation(X_train, X_valid, y_train, y_valid)
     train_is_treatment = pd.concat([train_is_treatment, valid_is_treatment], ignore_index=False)
 
@@ -53,27 +61,32 @@ if __name__ == "__main__":
         frequency = pd.read_csv("../../data/processed/frequency.csv", index_col="client_id")
         X_train = X_train.join(frequency)
     if args.level_1:
-        level_1 = pd.read_csv("../../data/processed/level_1.csv", index_col="client_id").drop(["Unnamed: 0"], axis=1)
+        level_1 = pd.read_csv("../../data/processed/level_1.csv", index_col="client_id").drop(
+            ["Unnamed: 0"], axis=1
+        )
         X_train = X_train.join(level_1)
 
-    X_train_control, X_train_treatment, y_train_control, y_train_treatment = split_control_treatment(
-        X_train, y_train, train_is_treatment
-    )
+    (
+        X_train_control,
+        X_train_treatment,
+        y_train_control,
+        y_train_treatment,
+    ) = split_control_treatment(X_train, y_train, train_is_treatment)
 
     space = {
-        "learning_rate" : hp.quniform("learning_rate", 0.01, 0.5, 0.01),
-        "n_estimators" : hp.choice("n_estimators", range(100, 1000, 10)),
-        "min_child_weight" : hp.quniform("min_child_weight", 1, 10, 1),
+        "learning_rate": hp.quniform("learning_rate", 0.01, 0.5, 0.01),
+        "n_estimators": hp.choice("n_estimators", range(100, 1000, 10)),
+        "min_child_weight": hp.quniform("min_child_weight", 1, 10, 1),
         "gamma": hp.quniform("gamma", 0.1, 1, 0.05),
         "colsample_bytree": hp.quniform("colsample_bytree", 0.5, 1, 0.05),
-        "max_depth":  hp.choice("max_depth", np.arange(1, 14, dtype=int)),
+        "max_depth": hp.choice("max_depth", np.arange(1, 14, dtype=int)),
         "objective": "binary:logistic",
         "eta": hp.quniform("eta", 0.025, 0.5, 0.025),
-        "subsample" : hp.quniform("subsample", 0.1, 1, 0.01),
-        "reg_alpha" : hp.quniform("reg_alpha", 40,180,1),
-        "reg_lambda" : hp.uniform("reg_lambda", 0,1),
+        "subsample": hp.quniform("subsample", 0.1, 1, 0.01),
+        "reg_alpha": hp.quniform("reg_alpha", 40, 180, 1),
+        "reg_lambda": hp.uniform("reg_lambda", 0, 1),
     }
-    
+
     p = "../../models/hyperopt"
     if args.recency:
         p += "_recency"
@@ -84,7 +97,7 @@ if __name__ == "__main__":
 
     p_control = Path(p + "_control.json")
     p_treatment = Path(p + "_treatment.json")
-    
+
     if p_control.exists():
         with open(p_control, "r") as f:
             d = json.load(f)
@@ -97,11 +110,11 @@ if __name__ == "__main__":
     if p_treatment.exists():
         with open(p_treatment, "r") as f:
             d = json.load(f)
-        space_treatment =copy(space)
+        space_treatment = copy(space)
         space_treatment.update(d)
     else:
         space_treatment = {}
-    
+
     # Optimize control:
     trials = Trials()
     best = fmin(
@@ -118,7 +131,7 @@ if __name__ == "__main__":
     best["min_child_weight"] = int(best["min_child_weight"])
 
     if p_control.exists():
-        with open (p_control, "r") as f:
+        with open(p_control, "r") as f:
             d = json.load(f)
         best = d.update(best)
     for k, v in best.items():
@@ -145,7 +158,7 @@ if __name__ == "__main__":
 
     print(f"Treatment best params: {best}")
     if p_treatment.exists():
-        with open (p_treatment, "r") as f:
+        with open(p_treatment, "r") as f:
             d = json.load(f)
         best = d.update(best)
     for k, v in best.items():

@@ -3,18 +3,18 @@ from sklearn.model_selection import StratifiedKFold, RandomizedSearchCV
 
 
 def optimize(
-        X_train,
-        y_train,
-        num_class=2,
-        objective="binary:logistic",
-        scoring="neg_log_loss",
-        n_iter=40,
-        seed=42,
-        params=None,
-        cv=None,
-        X_val=None,
-        y_val=None
-    ):
+    X_train,
+    y_train,
+    num_class=2,
+    objective="binary:logistic",
+    scoring="neg_log_loss",
+    n_iter=40,
+    seed=42,
+    params=None,
+    cv=None,
+    X_val=None,
+    y_val=None,
+):
     if num_class == 2:
         clf = xgb.XGBClassifier(objective=objective)
     else:
@@ -30,12 +30,19 @@ def optimize(
         "reg_alpha": [0, 0.5, 1],
         "reg_lambda": [0.1, 1.0, 5.0, 10.0, 50.0, 100.0],
         "min_child_weight": [1, 3, 5, 7, 12],
-        "n_estimators": [100, 250, 500, 1000]
+        "n_estimators": [100, 250, 500, 1000],
     }
     if params:
         space.update(params)
     rs_clf = RandomizedSearchCV(
-        clf, param_distributions=space, scoring=scoring, cv=cv, n_iter=n_iter, verbose=3, random_state=seed, n_jobs=-1
+        clf,
+        param_distributions=space,
+        scoring=scoring,
+        cv=cv,
+        n_iter=n_iter,
+        verbose=3,
+        random_state=seed,
+        n_jobs=-1,
     )
     rs_clf.fit(X_train, y_train)
     print(f"Best parametrs: {rs_clf.best_params_}; best score: {rs_clf.best_score_}")

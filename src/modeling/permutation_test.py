@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+
 p = str(Path(".").resolve().parent.parent)
 sys.path.extend([p])
 
@@ -15,7 +16,15 @@ from src.modeling.utils import *
 
 if __name__ == "__main__":
 
-    X_train, y_train, train_is_treatment, X_valid, y_valid, valid_is_treatment, X_test = read_train_test()
+    (
+        X_train,
+        y_train,
+        train_is_treatment,
+        X_valid,
+        y_valid,
+        valid_is_treatment,
+        X_test,
+    ) = read_train_test()
 
     recency = pd.read_csv("../../data/processed/recency.csv", index_col="client_id")
     X_train = X_train.join(recency)
@@ -25,7 +34,9 @@ if __name__ == "__main__":
     X_train = X_train.join(frequency)
     X_valid = X_valid.join(frequency)
 
-    level_1 = pd.read_csv("../../data/processed/level_1.csv", index_col="client_id").drop(["Unnamed: 0"], axis=1)
+    level_1 = pd.read_csv("../../data/processed/level_1.csv", index_col="client_id").drop(
+        ["Unnamed: 0"], axis=1
+    )
     X_train = X_train.join(level_1)
     X_valid = X_valid.join(level_1)
 
@@ -41,16 +52,16 @@ if __name__ == "__main__":
 
     model = xgb.XGBClassifier(n_estimators=400, n_jobs=-1, random_state=42)
     model.fit(
-        X_train, 
-        y_train, 
-        eval_set=[(X_train, y_train), (X_valid, y_valid)], 
-        eval_metric="roc_auc", 
-        verbose=3, 
-        early_stopping_rounds=100
+        X_train,
+        y_train,
+        eval_set=[(X_train, y_train), (X_valid, y_valid)],
+        eval_metric="roc_auc",
+        verbose=3,
+        early_stopping_rounds=100,
     )
     perm = eli5.sklearn.PermutationImportance(model, random_state=42).fit(X_train, y_train)
     with open("../../data/eli5_top_50_features.html", "w") as f:
         f.write(eli5.show_weights(perm, top=50, feature_names=X_train.columns))
 
     top_features = [i for i in eli5.formatters.as_dataframe.explain_weights_df(model).feature][:50]
-    print("top features": top_features)
+    print("top features:", top_features)

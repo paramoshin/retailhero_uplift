@@ -1,6 +1,7 @@
 import argparse
 import sys
 from pathlib import Path
+
 p = str(Path(".").resolve().parent.parent)
 sys.path.extend([p])
 
@@ -18,13 +19,21 @@ if __name__ == "__main__":
 
     assert len(args.random_states) >= args.n_states
 
-    X_train, y_train, train_is_treatment, X_valid, y_valid, valid_is_treatment, X_test = read_train_test()
+    (
+        X_train,
+        y_train,
+        train_is_treatment,
+        X_valid,
+        y_valid,
+        valid_is_treatment,
+        X_test,
+    ) = read_train_test()
     X_train, y_train = join_train_validation(X_train, X_valid, y_train, y_valid)
     train_is_treatment = pd.concat([train_is_treatment, valid_is_treatment], ignore_index=False)
 
     folds_df = pd.DataFrame(
-        {f"random_state_{rs}": [0] * X_train.shape[0] for rs in args.random_states}, 
-        index=X_train.index
+        {f"random_state_{rs}": [0] * X_train.shape[0] for rs in args.random_states},
+        index=X_train.index,
     )
 
     for rs in args.random_states:

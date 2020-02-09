@@ -2,6 +2,7 @@ import argparse
 from datetime import datetime
 import sys
 from pathlib import Path
+
 p = str(Path(".").resolve().parent.parent)
 sys.path.extend([p])
 
@@ -28,7 +29,15 @@ if __name__ == "__main__":
 
     dt = datetime.now().strftime("%Y-%m-%d-%H-%M")
 
-    X_train, y_train, train_is_treatment, X_valid, y_valid, valid_is_treatment, X_test = read_train_test()
+    (
+        X_train,
+        y_train,
+        train_is_treatment,
+        X_valid,
+        y_valid,
+        valid_is_treatment,
+        X_test,
+    ) = read_train_test()
     X_train, y_train = join_train_validation(X_train, X_valid, y_train, y_valid)
     train_is_treatment = pd.concat([train_is_treatment, valid_is_treatment], ignore_index=False)
     folds = pd.read_csv("../../data/processed/folds.csv", index_col="client_id")
@@ -42,10 +51,11 @@ if __name__ == "__main__":
         X_train = X_train.join(frequency)
         X_test = X_test.join(frequency)
     if args.level_1:
-        level_1 = pd.read_csv("../../data/processed/level_1.csv", index_col="client_id").drop(["Unnamed: 0"], axis=1)
+        level_1 = pd.read_csv("../../data/processed/level_1.csv", index_col="client_id").drop(
+            ["Unnamed: 0"], axis=1
+        )
         X_train = X_train.join(level_1)
         X_test = X_test.join(level_1)
-
 
     for i in range(5):
         print(f"Fold {i + 1}")
@@ -77,15 +87,14 @@ if __name__ == "__main__":
 
     if args.to_average == "uplift":
         preds /= 5
-        df_submission = pd.DataFrame({'uplift': preds}, index=X_test.index)
+        df_submission = pd.DataFrame({"uplift": preds}, index=X_test.index)
     else:
         treatment_preds /= 5
         control_preds /= 5
         uplift_prediction = treatment_preds - control_preds
-        df_submission = pd.DataFrame({'uplift': uplift_prediction}, index=X_test.index)
+        df_submission = pd.DataFrame({"uplift": uplift_prediction}, index=X_test.index)
 
     submission_folder = Path(f"../../data/submissions/folds")
     submission_folder.mkdir(parents=True, exist_ok=True)
-    df_submission.to_csv(f'{submission_folder}/submission_{dt}.csv')
-    log_artifact(f'{submission_folder}/submission_{dt}.csv', "submission")
-
+    df_submission.to_csv(f"{submission_folder}/submission_{dt}.csv")
+    log_artifact(f"{submission_folder}/submission_{dt}.csv", "submission")

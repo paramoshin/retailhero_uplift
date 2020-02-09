@@ -5,20 +5,18 @@ import numpy as np
 
 
 def read_train_test():
-    X_train = pd.read_csv(
-        "../../data/processed/two_models/X_train.csv", index_col="client_id"
-    )
+    X_train = pd.read_csv("../../data/processed/two_models/X_train.csv", index_col="client_id")
     y_train = pd.read_csv(
         "../../data/processed/two_models/y_train.csv",
         header=None,
         names=["client_id", "target"],
-        index_col="client_id"
+        index_col="client_id",
     )["target"]
     train_is_treatment = pd.read_csv(
         "../../data/processed/two_models/X_train_is_treatment.csv",
         header=None,
         names=["client_id", "is_treatment"],
-        index_col="client_id"
+        index_col="client_id",
     )["is_treatment"]
 
     X_valid = pd.read_csv("../../data/processed/two_models/X_valid.csv", index_col="client_id")
@@ -26,13 +24,13 @@ def read_train_test():
         "../../data/processed/two_models/y_valid.csv",
         header=None,
         names=["client_id", "target"],
-        index_col="client_id"
+        index_col="client_id",
     )["target"]
     valid_is_treatment = pd.read_csv(
         "../../data/processed/two_models/X_valid_is_treatment.csv",
         header=None,
         names=["client_id", "is_treatment"],
-        index_col="client_id"
+        index_col="client_id",
     )["is_treatment"]
 
     X_test = pd.read_csv("../../data/processed/two_models/X_test.csv", index_col="client_id")
