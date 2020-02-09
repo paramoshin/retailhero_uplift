@@ -50,6 +50,9 @@ if __name__ == "__main__":
     X_train = X_train.join(w2v)
     X_valid = X_valid.join(w2v)
 
+    X_train = X_train.fillna(-99999)
+    X_valid = X_valid.fillna(-99999)
+
     model = xgb.XGBClassifier(n_estimators=400, n_jobs=-1, random_state=42)
     model.fit(
         X_train,
