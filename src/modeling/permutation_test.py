@@ -44,7 +44,7 @@ if __name__ == "__main__":
         X_train, 
         y_train, 
         eval_set=[(X_train, y_train), (X_valid, y_valid)], 
-        eval_metric="roc_auc", 
+        eval_metric="auc", 
         verbose=3, 
         early_stopping_rounds=100
     )
@@ -53,4 +53,4 @@ if __name__ == "__main__":
         f.write(eli5.show_weights(perm, top=50, feature_names=X_train.columns))
 
     top_features = [i for i in eli5.formatters.as_dataframe.explain_weights_df(model).feature][:50]
-    print("top features": top_features)
+    print("top features:", top_features)
