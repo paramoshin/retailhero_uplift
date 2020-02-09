@@ -29,10 +29,10 @@ def fit_(model, X_train_control, X_train_treatment, y_train_control, y_train_tre
     X_train = np.vstack((X_train_control, X_train_treatment))
     if predict_test == False:
         control_proba = clf_control.predict_proba(X_train)[:, 1]
-        treatment_proba = clf_control.predict_proba(X_train)[:, 1]
+        treatment_proba = clf_treatment.predict_proba(X_train)[:, 1]
     else:
         control_proba = clf_control.predict_proba(X_test)[:, 1]
-        treatment_proba = clf_control.predict_proba(X_test)[:, 1]
+        treatment_proba = clf_treatment.predict_proba(X_test)[:, 1]
     return control_proba, treatment_proba
 
 def get_cv_score(model, folds, X_train, y_train, train_is_treatment):
@@ -289,8 +289,9 @@ if __name__ == "__main__":
 
         uplift_preds_df = pd.DataFrame({"uplift_lr": uplift_lr, "uplift_xgb": uplift_xgb})
     else:
+        d = {}
         for i, (treatment_proba, control_proba) in enumerate(zip(treatment_probas, control_probas)):
-            d = {f"step_{i}": treatment_proba - control_proba}
+            d[f"step_{i}"] = treatment_proba - control_proba
         uplift_preds_df = pd.DataFrame(d)
 
     print(uplift_preds_df.corr())
