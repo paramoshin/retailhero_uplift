@@ -135,9 +135,9 @@ if __name__ == "__main__":
             d = json.load(f)
         best = d.update(best)
     for k, v in best.items():
-        if "int" in str(type(best(k))):
+        if "int" in str(type(best[k])):
             best[k] = int(v)
-        if "float" in str(type(best(k))):
+        if "float" in str(type(best[k])):
             best[k] = float(v)
     with open(p_control, "w") as f:
         json.dump(best, f)
@@ -162,9 +162,9 @@ if __name__ == "__main__":
             d = json.load(f)
         best = d.update(best)
     for k, v in best.items():
-        if "int" in str(type(best(k))):
+        if "int" in str(type(best[k])):
             best[k] = int(v)
-        if "float" in str(type(best(k))):
+        if "float" in str(type(best[k])):
             best[k] = float(v)
     with open(p_treatment, "w") as f:
         json.dump(best, f)
