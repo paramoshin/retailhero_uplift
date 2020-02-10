@@ -37,6 +37,8 @@ def objective(space, X_train, y_train):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument("--control", type=bool, default=True)
+    parser.add_argument("--treatment", type=bool, default=True)
     parser.add_argument("--recency", type=bool, default=False)
     parser.add_argument("--frequency", type=bool, default=False)
     parser.add_argument("--level_1", type=bool, default=False)
@@ -106,65 +108,66 @@ if __name__ == "__main__":
     else:
         space_control = space
 
-    space_treatment = {}
     if p_treatment.exists():
         with open(p_treatment, "r") as f:
             d = json.load(f)
         space_treatment = copy(space)
         space_treatment.update(d)
     else:
-        space_treatment = {}
+        space_treatment = space
 
     # Optimize control:
-    trials = Trials()
-    best = fmin(
-        fn=partial(objective, X_train=X_train_control, y_train=y_train_control),
-        space=space_control,
-        algo=tpe.suggest,
-        max_evals=50,
-        trials=trials,
-    )
-    print(f"Control best params: {best}")
+    if args.control:
+        trials = Trials()
+        best = fmin(
+            fn=partial(objective, X_train=X_train_control, y_train=y_train_control),
+            space=space_control,
+            algo=tpe.suggest,
+            max_evals=50,
+            trials=trials,
+        )
+        print(f"Control best params: {best}")
 
-    best["learning_rate"] = float(best["learning_rate"])
-    best["n_estimators"] = int(best["n_estimators"])
-    best["min_child_weight"] = int(best["min_child_weight"])
+        best["learning_rate"] = float(best["learning_rate"])
+        best["n_estimators"] = int(best["n_estimators"])
+        best["min_child_weight"] = int(best["min_child_weight"])
 
-    if p_control.exists():
-        with open(p_control, "r") as f:
-            d = json.load(f)
-        best = d.update(best)
-    for k, v in best.items():
-        if "int" in str(type(best[k])):
-            best[k] = int(v)
-        if "float" in str(type(best[k])):
-            best[k] = float(v)
-    with open(p_control, "w") as f:
-        json.dump(best, f)
+        if p_control.exists():
+            with open(p_control, "r") as f:
+                d = json.load(f)
+            best = d.update(best)
+        for k, v in best.items():
+            if "int" in str(type(best[k])):
+                best[k] = int(v)
+            if "float" in str(type(best[k])):
+                best[k] = float(v)
+        with open(p_control, "w") as f:
+            json.dump(best, f)
+    
+    if args.treatment:
+        # Optimize treatment:
+        trials = Trials()
+        best = fmin(
+            fn=partial(objective, X_train=X_train_treatment, y_train=y_train_treatment),
+            space=space_treatment,
+            algo=tpe.suggest,
+            max_evals=50,
+            trials=trials,
+        )
 
-    # Optimize treatment:
-    trials = Trials()
-    best = fmin(
-        fn=partial(objective, X_train=X_train_treatment, y_train=y_train_treatment),
-        space=space_treatment,
-        algo=tpe.suggest,
-        max_evals=50,
-        trials=trials,
-    )
+        best["learning_rate"] = float(best["learning_rate"])
+        best["n_estimators"] = int(best["n_estimators"])
+        best["min_child_weight"] = int(best["min_child_weight"])
 
-    best["learning_rate"] = float(best["learning_rate"])
-    best["n_estimators"] = int(best["n_estimators"])
-    best["min_child_weight"] = int(best["min_child_weight"])
-
-    print(f"Treatment best params: {best}")
-    if p_treatment.exists():
-        with open(p_treatment, "r") as f:
-            d = json.load(f)
-        best = d.update(best)
-    for k, v in best.items():
-        if "int" in str(type(best[k])):
-            best[k] = int(v)
-        if "float" in str(type(best[k])):
-            best[k] = float(v)
-    with open(p_treatment, "w") as f:
-        json.dump(best, f)
+        print(f"Treatment best params: {best}")
+        if p_treatment.exists():
+            with open(p_treatment, "r") as f:
+                d = json.load(f)
+            best = d.update(best)
+        for k, v in best.items():
+            if "int" in str(type(best[k])):
+                best[k] = int(v)
+            if "float" in str(type(best[k])):
+                best[k] = float(v)
+        with open(p_treatment, "w") as f:
+            json.dump(best, f)

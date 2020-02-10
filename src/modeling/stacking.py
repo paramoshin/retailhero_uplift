@@ -302,12 +302,12 @@ if __name__ == "__main__":
         xgb_treatment = clone(models["xgb"]).fit(np.array(treatment_probas_train).T, y_train)
 
         uplift_lr = (
-            lr_treatment.predict_proba(treatment_probas_test)[:, 1]
-            - lr_control.predict_proba(control_probas_test)[:, 1]
+            lr_treatment.predict_proba(np.array(treatment_probas_test).T)[:, 1]
+            - lr_control.predict_proba(np.array(control_probas_test).T)[:, 1]
         )
         uplift_xgb = (
-            xgb_treatment.predict_proba(treatment_probas_test)[:, 1]
-            - xgb_control.predict_proba(control_probas_test)[:, 1]
+            xgb_treatment.predict_proba(np.array(treatment_probas_test).T)[:, 1]
+            - xgb_control.predict_proba(np.array(control_probas_test).T)[:, 1]
         )
 
         uplift_preds_df = pd.DataFrame({"uplift_lr": uplift_lr, "uplift_xgb": uplift_xgb})
